@@ -14,12 +14,21 @@ serve(async (req) => {
   try {
     const { prompt, canvasSize } = await req.json();
     
-    const apiKey = Deno.env.get('LOVABLE_API_KEY');
-    const model = Deno.env.get('LLM_MODEL') || 'google/gemini-2.5-flash';
+    // Support both Lovable AI and OpenAI
+    const provider = Deno.env.get('LLM_PROVIDER') || 'lovable'; // 'lovable' or 'openai'
+    const apiKey = provider === 'openai' 
+      ? Deno.env.get('OPENAI_API_KEY')
+      : Deno.env.get('LOVABLE_API_KEY');
+    const model = Deno.env.get('LLM_MODEL') || 
+      (provider === 'openai' ? 'gpt-4o-mini' : 'google/gemini-2.5-flash');
     
     if (!apiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      throw new Error(`${provider === 'openai' ? 'OPENAI_API_KEY' : 'LOVABLE_API_KEY'} not configured`);
     }
+    
+    const apiEndpoint = provider === 'openai'
+      ? 'https://api.openai.com/v1/chat/completions'
+      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
     const systemPrompt = `You are an email template design assistant. Generate a JSON template for an email design based on the user's request.
 
@@ -61,9 +70,9 @@ Return ONLY valid JSON in this exact format:
   ]
 }`;
 
-    console.log('Calling LLM with model:', model);
+    console.log('Calling LLM with provider:', provider, 'model:', model);
     
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
