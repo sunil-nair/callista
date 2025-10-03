@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bold, Italic, Underline, Link, Image, Code, AtSign } from "lucide-react";
+import { Bold, Italic, Underline, Link, Image, Code, AtSign, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 interface TemplateEditorProps {
   initialName?: string;
   initialHtml?: string;
   onSave: (name: string, html: string) => void;
+  onPreview?: () => void;
 }
 
-export const TemplateEditor = ({ initialName = "", initialHtml = "", onSave }: TemplateEditorProps) => {
+export const TemplateEditor = ({ initialName = "", initialHtml = "", onSave, onPreview }: TemplateEditorProps) => {
   const [templateName, setTemplateName] = useState(initialName);
   const [showPlaceholderInput, setShowPlaceholderInput] = useState(false);
   const [placeholderName, setPlaceholderName] = useState("");
@@ -85,9 +86,17 @@ export const TemplateEditor = ({ initialName = "", initialHtml = "", onSave }: T
           onChange={(e) => setTemplateName(e.target.value)}
           className="max-w-xs"
         />
-        <Button onClick={handleSave} className="ml-auto">
-          Save Template
-        </Button>
+        <div className="ml-auto flex gap-2">
+          {onPreview && (
+            <Button variant="outline" onClick={onPreview}>
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </Button>
+          )}
+          <Button onClick={handleSave}>
+            Save Template
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}

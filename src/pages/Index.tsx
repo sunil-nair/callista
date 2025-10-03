@@ -148,6 +148,13 @@ const Index = () => {
             initialName={selectedTemplate?.name || ""}
             initialHtml={selectedTemplate?.html || ""}
             onSave={handleSave}
+            onPreview={() => {
+              if (selectedTemplate) {
+                handlePreview(selectedTemplate);
+              } else {
+                toast.info("Please save the template first to preview it");
+              }
+            }}
           />
         </div>
       </div>
