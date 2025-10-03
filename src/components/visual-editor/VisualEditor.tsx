@@ -50,6 +50,7 @@ export const VisualEditor = ({
           fontWeight: '400',
           color: '#000000',
           textAlign: 'left',
+          fontFamily: 'Inter, sans-serif',
         },
       };
     } else if (type === 'image') {
@@ -168,7 +169,8 @@ export const VisualEditor = ({
       const style = `position: absolute; left: ${el.position.x}px; top: ${el.position.y}px; width: ${el.size.width}px; height: ${el.size.height}px;`;
       
       if (el.type === 'text') {
-        return `<div style="${style} font-size: ${el.style.fontSize}px; font-weight: ${el.style.fontWeight}; color: ${el.style.color}; text-align: ${el.style.textAlign};">${el.content}</div>`;
+        const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
+        return `<div style="${style} font-size: ${el.style.fontSize}px; font-weight: ${el.style.fontWeight}; color: ${el.style.color}; text-align: ${el.style.textAlign}; font-family: ${fontFamily};">${el.content}</div>`;
       }
       
       if (el.type === 'image') {
@@ -256,6 +258,7 @@ export const VisualEditor = ({
                 fontWeight: element.style.fontWeight,
                 color: element.style.color,
                 textAlign: element.style.textAlign,
+                fontFamily: element.style.fontFamily || 'Inter, sans-serif',
                 width: '100%',
                 height: '100%',
                 overflow: 'hidden',

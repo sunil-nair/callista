@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateElement } from "@/types/template";
 import { Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { availableFonts } from "@/lib/fonts";
 
 interface PropertiesPanelProps {
   selectedElement: TemplateElement | null;
@@ -187,6 +188,24 @@ export const PropertiesPanel = ({
                   <SelectItem value="left">Left</SelectItem>
                   <SelectItem value="center">Center</SelectItem>
                   <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="fontFamily" className="text-xs">Font Family</Label>
+              <Select 
+                value={selectedElement.style.fontFamily || 'Inter, sans-serif'} 
+                onValueChange={(v) => handleStyleUpdate('fontFamily', v)}
+              >
+                <SelectTrigger className="h-8 mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card z-50 max-h-[300px]">
+                  {availableFonts.map((font) => (
+                    <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                      {font.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
