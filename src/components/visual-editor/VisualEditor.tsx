@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Eye, Save } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { PlaceholderText } from "./PlaceholderText";
 import { TemplateElement, EmailTemplate } from "@/types/template";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
@@ -252,7 +253,8 @@ export const VisualEditor = ({
       >
         <div className="w-full h-full">
           {element.type === 'text' && (
-            <div
+            <PlaceholderText
+              content={element.content}
               style={{
                 fontSize: element.style.fontSize,
                 fontWeight: element.style.fontWeight,
@@ -263,9 +265,7 @@ export const VisualEditor = ({
                 height: '100%',
                 overflow: 'hidden',
               }}
-            >
-              {element.content}
-            </div>
+            />
           )}
           
           {element.type === 'image' && (

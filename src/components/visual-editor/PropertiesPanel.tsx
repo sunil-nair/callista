@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateElement } from "@/types/template";
-import { Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, ArrowUp, ArrowDown, AtSign } from "lucide-react";
 import { availableFonts } from "@/lib/fonts";
+import { toast } from "sonner";
 
 interface PropertiesPanelProps {
   selectedElement: TemplateElement | null;
@@ -22,6 +24,9 @@ export const PropertiesPanel = ({
   onBringForward,
   onSendBackward,
 }: PropertiesPanelProps) => {
+  const [showPlaceholderInput, setShowPlaceholderInput] = useState(false);
+  const [placeholderName, setPlaceholderName] = useState("");
+
   if (!selectedElement) {
     return (
       <div className="w-80 border-l bg-card p-4">
@@ -34,6 +39,24 @@ export const PropertiesPanel = ({
     onUpdateElement(selectedElement.id, {
       style: { ...selectedElement.style, [key]: value },
     } as any);
+  };
+
+  const handleInsertPlaceholder = () => {
+    if (!placeholderName.trim()) {
+      toast.error("Please enter a placeholder name");
+      return;
+    }
+
+    if (selectedElement.type === 'text') {
+      const currentContent = selectedElement.content || "";
+      const placeholder = `{{${placeholderName}}}`;
+      onUpdateElement(selectedElement.id, {
+        content: currentContent + placeholder,
+      } as any);
+      setPlaceholderName("");
+      setShowPlaceholderInput(false);
+      toast.success("Placeholder inserted");
+    }
   };
 
   return (
@@ -143,6 +166,39 @@ export const PropertiesPanel = ({
                 onChange={(e) => onUpdateElement(selectedElement.id, { content: e.target.value } as any)}
                 className="mt-1"
               />
+              <div className="mt-2">
+                {!showPlaceholderInput ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowPlaceholderInput(true)}
+                  >
+                    <AtSign className="h-4 w-4 mr-2" />
+                    Insert Placeholder
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="name"
+                      value={placeholderName}
+                      onChange={(e) => setPlaceholderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleInsertPlaceholder();
+                        if (e.key === "Escape") {
+                          setShowPlaceholderInput(false);
+                          setPlaceholderName("");
+                        }
+                      }}
+                      className="h-8"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={handleInsertPlaceholder}>
+                      Add
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <Label htmlFor="fontSize" className="text-xs">Font Size</Label>
