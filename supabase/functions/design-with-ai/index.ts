@@ -81,8 +81,8 @@ Return ONLY valid JSON in this exact format:
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('LLM API error:', error);
-      throw new Error(`LLM API error: ${response.status}`);
+      console.error('LLM API error:', response.status, error);
+      throw new Error(`LLM API error: ${response.status} - ${error}`);
     }
 
     const data = await response.json();

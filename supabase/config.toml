@@ -2,3 +2,6 @@ project_id = "anjjageurgmayjpmzlzr"
 
 [functions.get-template]
 verify_jwt = false
+
+[functions.design-with-ai]
+verify_jwt = false
