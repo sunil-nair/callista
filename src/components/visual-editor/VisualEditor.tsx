@@ -35,6 +35,7 @@ export const VisualEditor = ({
   const [canvasSize, setCanvasSize] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
   const [showComponentPanel, setShowComponentPanel] = useState(true);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const canvasSizes = {
@@ -244,6 +245,7 @@ export const VisualEditor = ({
 
   const renderElement = (element: TemplateElement) => {
     const isSelected = element.id === selectedElementId;
+    const isEditing = element.id === editingTextId;
     
     return (
       <Rnd
@@ -251,39 +253,83 @@ export const VisualEditor = ({
         position={element.position}
         size={element.size}
         onDragStop={(e, d) => {
-          handleUpdateElement(element.id, {
-            position: { x: d.x, y: d.y },
-          });
+          if (!isEditing) {
+            handleUpdateElement(element.id, {
+              position: { x: d.x, y: d.y },
+            });
+          }
         }}
         onResizeStop={(e, direction, ref, delta, position) => {
-          handleUpdateElement(element.id, {
-            size: {
-              width: parseInt(ref.style.width),
-              height: parseInt(ref.style.height),
-            },
-            position,
-          });
+          if (!isEditing) {
+            handleUpdateElement(element.id, {
+              size: {
+                width: parseInt(ref.style.width),
+                height: parseInt(ref.style.height),
+              },
+              position,
+            });
+          }
         }}
         bounds="parent"
         style={{ zIndex: element.zIndex }}
-        className={`cursor-move ${isSelected ? 'ring-2 ring-primary' : ''}`}
+        className={`${!isEditing ? 'cursor-move' : 'cursor-text'} ${isSelected ? 'ring-2 ring-primary' : ''}`}
         onClick={() => setSelectedElementId(element.id)}
+        disableDragging={isEditing}
+        enableResizing={!isEditing}
       >
-        <div className="w-full h-full">
+        <div 
+          className="w-full h-full"
+          onDoubleClick={() => {
+            if (element.type === 'text') {
+              setEditingTextId(element.id);
+              setSelectedElementId(element.id);
+            }
+          }}
+        >
           {element.type === 'text' && (
-            <PlaceholderText
-              content={element.content}
-              style={{
-                fontSize: element.style.fontSize,
-                fontWeight: element.style.fontWeight,
-                color: element.style.color,
-                textAlign: element.style.textAlign,
-                fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-              }}
-            />
+            <>
+              {isEditing ? (
+                <textarea
+                  autoFocus
+                  value={element.content}
+                  onChange={(e) => handleUpdateElement(element.id, { content: e.target.value } as any)}
+                  onBlur={() => setEditingTextId(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setEditingTextId(null);
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    fontSize: element.style.fontSize,
+                    fontWeight: element.style.fontWeight,
+                    color: element.style.color,
+                    textAlign: element.style.textAlign,
+                    fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    resize: 'none',
+                    overflow: 'hidden',
+                  }}
+                />
+              ) : (
+                <PlaceholderText
+                  content={element.content}
+                  style={{
+                    fontSize: element.style.fontSize,
+                    fontWeight: element.style.fontWeight,
+                    color: element.style.color,
+                    textAlign: element.style.textAlign,
+                    fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'hidden',
+                  }}
+                />
+              )}
+            </>
           )}
           
           {element.type === 'image' && (
