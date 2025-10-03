@@ -9,6 +9,7 @@ import { PlaceholderText } from "./PlaceholderText";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
 import { TemplateElement, EmailTemplate } from "@/types/template";
 import { HTMLParser } from "@/utils/htmlParser";
+import { HTMLGenerator } from "@/utils/htmlGenerator";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -176,48 +177,8 @@ export const VisualEditor = ({
     });
   };
 
-  const generateHTML = (): string => {
-    const sortedElements = [...template.elements].sort((a, b) => a.zIndex - b.zIndex);
-    
-    const elementsHTML = sortedElements.map((el) => {
-      const style = `position: absolute; left: ${el.position.x}px; top: ${el.position.y}px; width: ${el.size.width}px; height: ${el.size.height}px;`;
-      
-      if (el.type === 'text') {
-        const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
-        return `<div style="${style} font-size: ${el.style.fontSize}px; font-weight: ${el.style.fontWeight}; color: ${el.style.color}; text-align: ${el.style.textAlign}; font-family: ${fontFamily};">${el.content}</div>`;
-      }
-      
-      if (el.type === 'image') {
-        return `<img src="${el.src}" alt="${el.alt}" style="${style} object-fit: ${el.style.objectFit}; border-radius: ${el.style.borderRadius}px;" />`;
-      }
-      
-      if (el.type === 'shape') {
-        const shapeStyle = el.shapeType === 'circle' 
-          ? `${style} background-color: ${el.style.backgroundColor}; border: ${el.style.borderWidth}px solid ${el.style.borderColor}; border-radius: 50%;`
-          : `${style} background-color: ${el.style.backgroundColor}; border: ${el.style.borderWidth}px solid ${el.style.borderColor}; border-radius: ${el.style.borderRadius}px;`;
-        return `<div style="${shapeStyle}"></div>`;
-      }
-      
-      if (el.type === 'button') {
-        return `<a href="${el.href}" style="${style} display: flex; align-items: center; justify-content: center; background-color: ${el.style.backgroundColor}; color: ${el.style.color}; font-size: ${el.style.fontSize}px; border-radius: ${el.style.borderRadius}px; text-decoration: none; padding: ${el.style.paddingY}px ${el.style.paddingX}px;">${el.text}</a>`;
-      }
-      
-      return '';
-    }).join('\n');
-
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0;">
-  <div style="position: relative; width: ${template.canvasSize.width}px; height: ${template.canvasSize.height}px; margin: 0 auto; background-color: #ffffff;">
-    ${elementsHTML}
-  </div>
-</body>
-</html>`;
+  const generateHTML = (useTableLayout: boolean = false): string => {
+    return HTMLGenerator.generateHTML(template, useTableLayout);
   };
 
   const handleSave = () => {

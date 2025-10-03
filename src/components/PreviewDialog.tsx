@@ -1,8 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Download } from "lucide-react";
+import { Copy, Download, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { HTMLGenerator } from "@/utils/htmlGenerator";
 
 interface PreviewDialogProps {
   open: boolean;
@@ -10,19 +14,33 @@ interface PreviewDialogProps {
   template: {
     name: string;
     html: string;
+    json_template: any;
   } | null;
 }
 
 export const PreviewDialog = ({ open, onOpenChange, template }: PreviewDialogProps) => {
+  const [copied, setCopied] = useState(false);
+  const [useTableLayout, setUseTableLayout] = useState(false);
+
   if (!template) return null;
 
-  const copyHtml = () => {
-    navigator.clipboard.writeText(template.html);
-    toast.success("HTML copied to clipboard!");
+  const displayHTML = useTableLayout && template.json_template
+    ? HTMLGenerator.generateHTML(template.json_template, true)
+    : template.html;
+
+  const copyHtml = async () => {
+    try {
+      await navigator.clipboard.writeText(displayHTML);
+      setCopied(true);
+      toast.success("HTML copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy HTML");
+    }
   };
 
   const downloadHtml = () => {
-    const blob = new Blob([template.html], { type: "text/html" });
+    const blob = new Blob([displayHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -43,29 +61,50 @@ export const PreviewDialog = ({ open, onOpenChange, template }: PreviewDialogPro
         
         <Tabs defaultValue="preview" className="flex-1">
           <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-              <TabsTrigger value="html">HTML</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center gap-4">
+              <TabsList>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="html">HTML</TabsTrigger>
+              </TabsList>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="layout-mode"
+                  checked={useTableLayout}
+                  onCheckedChange={setUseTableLayout}
+                />
+                <Label htmlFor="layout-mode" className="text-sm">
+                  Table Layout (Email-friendly)
+                </Label>
+              </div>
+            </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={copyHtml}>
-                <Copy className="h-4 w-4 mr-1" />
-                Copy HTML
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy HTML
+                  </>
+                )}
               </Button>
               <Button size="sm" variant="outline" onClick={downloadHtml}>
                 <Download className="h-4 w-4 mr-1" />
-                Download
+                Export
               </Button>
             </div>
           </div>
 
           <TabsContent value="preview" className="border rounded-lg p-4 bg-background max-h-[50vh] overflow-auto">
-            <div dangerouslySetInnerHTML={{ __html: template.html }} />
+            <div dangerouslySetInnerHTML={{ __html: displayHTML }} />
           </TabsContent>
 
           <TabsContent value="html" className="border rounded-lg p-4 bg-muted max-h-[50vh] overflow-auto">
             <pre className="text-xs font-mono whitespace-pre-wrap break-all">
-              {template.html}
+              {displayHTML}
             </pre>
           </TabsContent>
         </Tabs>
