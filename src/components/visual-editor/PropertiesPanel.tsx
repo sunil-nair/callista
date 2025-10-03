@@ -29,8 +29,16 @@ export const PropertiesPanel = ({
 
   if (!selectedElement) {
     return (
-      <div className="w-80 border-l bg-card p-4">
-        <p className="text-sm text-muted-foreground">Select an element to edit its properties</p>
+      <div className="w-80 border-l bg-card p-6 flex flex-col items-center justify-center text-center h-full">
+        <div className="max-w-xs space-y-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <AtSign className="h-6 w-6 text-primary/50" />
+          </div>
+          <h3 className="font-semibold text-sm">No Element Selected</h3>
+          <p className="text-xs text-muted-foreground">
+            Select an element on the canvas to edit its properties
+          </p>
+        </div>
       </div>
     );
   }

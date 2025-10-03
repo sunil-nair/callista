@@ -381,15 +381,15 @@ export const VisualEditor = ({
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Component Palette - Collapsible */}
+    <div className="flex h-full overflow-hidden bg-background">
+      {/* Component Palette - Full Height */}
       {showComponentPanel ? (
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0 h-full">
           <ComponentPalette onAddElement={handleAddElement} />
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-2 h-6 w-6 p-0"
+            className="absolute top-2 right-2 h-6 w-6 p-0 z-10"
             onClick={() => setShowComponentPanel(false)}
             title="Collapse Components"
           >
@@ -397,7 +397,7 @@ export const VisualEditor = ({
           </Button>
         </div>
       ) : (
-        <div className="flex-shrink-0 w-12 border-r bg-card flex items-start justify-center pt-2">
+        <div className="flex-shrink-0 w-12 border-r bg-card flex items-start justify-center pt-4 h-full">
           <Button
             variant="ghost"
             size="sm"
@@ -409,22 +409,24 @@ export const VisualEditor = ({
         </div>
       )}
       
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar */}
-        <div className="border-b bg-card p-4 flex items-center gap-4 flex-shrink-0">
+      {/* Canvas Area - Center Section */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
+        {/* Canvas Toolbar */}
+        <div className="border-b bg-card/50 backdrop-blur-sm px-4 py-3 flex items-center gap-3 flex-shrink-0">
           <Input
             placeholder="Template name..."
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
-            className="max-w-xs"
+            className="max-w-xs h-9"
           />
           
           {/* Canvas Size Selector */}
-          <div className="flex gap-1 border rounded-md p-1">
+          <div className="flex gap-1 border rounded-md p-0.5 bg-background">
             <Button
               variant={canvasSize === 'mobile' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleCanvasSizeChange('mobile')}
+              className="h-8 text-xs"
             >
               Mobile
             </Button>
@@ -432,6 +434,7 @@ export const VisualEditor = ({
               variant={canvasSize === 'tablet' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleCanvasSizeChange('tablet')}
+              className="h-8 text-xs"
             >
               Tablet
             </Button>
@@ -439,6 +442,7 @@ export const VisualEditor = ({
               variant={canvasSize === 'desktop' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleCanvasSizeChange('desktop')}
+              className="h-8 text-xs"
             >
               Desktop
             </Button>
@@ -449,18 +453,19 @@ export const VisualEditor = ({
             variant={showGrid ? 'default' : 'outline'}
             size="sm"
             onClick={() => setShowGrid(!showGrid)}
+            className="h-8 text-xs"
           >
             Grid: {showGrid ? 'ON' : 'OFF'}
           </Button>
 
           <div className="ml-auto flex gap-2">
             {onPreview && (
-              <Button variant="outline" onClick={handlePreview}>
+              <Button variant="outline" size="sm" onClick={handlePreview} className="h-8">
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
             )}
-            <Button onClick={handleSave}>
+            <Button size="sm" onClick={handleSave} className="h-8">
               <Save className="h-4 w-4 mr-2" />
               Save Template
             </Button>
@@ -468,65 +473,67 @@ export const VisualEditor = ({
         </div>
 
         {/* Canvas - Scrollable */}
-        <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-background to-accent/5">
-          <div className="mx-auto relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
-            {/* Ruler guides */}
-            <div className="absolute -left-8 top-0 bottom-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground">
-              {Array.from({ length: Math.floor(template.canvasSize.height / 50) }).map((_, i) => (
-                <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
-                  {i * 50}
-                </div>
-              ))}
-            </div>
-            <div className="absolute -top-8 left-0 right-0 h-8 bg-muted/50 flex items-center justify-start text-xs text-muted-foreground">
-              {Array.from({ length: Math.floor(template.canvasSize.width / 50) }).map((_, i) => (
-                <div key={i} style={{ position: 'absolute', left: i * 50, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
-                  {i * 50}
-                </div>
-              ))}
-            </div>
+        <div className="flex-1 overflow-auto bg-gradient-to-br from-muted/30 to-muted/5">
+          <div className="min-h-full flex items-center justify-center p-8">
+            <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
+              {/* Ruler guides */}
+              <div className="absolute -left-8 top-0 bottom-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l">
+                {Array.from({ length: Math.floor(template.canvasSize.height / 50) }).map((_, i) => (
+                  <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
+                    {i * 50}
+                  </div>
+                ))}
+              </div>
+              <div className="absolute -top-8 left-0 right-0 h-8 bg-muted/50 flex items-center justify-start text-xs text-muted-foreground rounded-t">
+                {Array.from({ length: Math.floor(template.canvasSize.width / 50) }).map((_, i) => (
+                  <div key={i} style={{ position: 'absolute', left: i * 50, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+                    {i * 50}
+                  </div>
+                ))}
+              </div>
 
-            {/* Safe zone guide overlay */}
-            <div 
-              className="absolute border-2 border-dashed border-primary/30 pointer-events-none"
-              style={{
-                left: 20,
-                top: 20,
-                right: 20,
-                bottom: 20,
-                width: template.canvasSize.width - 40,
-                height: template.canvasSize.height - 40,
-              }}
-            >
-              <span className="absolute -top-6 left-0 text-xs text-primary/60">Safe Zone (20px margin)</span>
-            </div>
+              {/* Safe zone guide overlay */}
+              <div 
+                className="absolute border-2 border-dashed border-primary/20 pointer-events-none rounded"
+                style={{
+                  left: 20,
+                  top: 20,
+                  right: 20,
+                  bottom: 20,
+                  width: template.canvasSize.width - 40,
+                  height: template.canvasSize.height - 40,
+                }}
+              >
+                <span className="absolute -top-6 left-0 text-xs text-primary/60 font-medium">Safe Zone (20px margin)</span>
+              </div>
 
-            <div
-              ref={canvasRef}
-              className={`bg-white shadow-lg mx-auto relative ${showGrid ? 'bg-grid' : ''}`}
-              style={{
-                width: template.canvasSize.width,
-                height: template.canvasSize.height,
-                backgroundImage: showGrid 
-                  ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
-                  : 'none',
-                backgroundSize: showGrid ? '20px 20px' : 'auto',
-              }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  setSelectedElementId(null);
-                }
-              }}
-            >
-              {template.elements.map(renderElement)}
+              <div
+                ref={canvasRef}
+                className={`bg-white shadow-2xl mx-auto relative rounded-lg overflow-hidden ${showGrid ? 'bg-grid' : ''}`}
+                style={{
+                  width: template.canvasSize.width,
+                  height: template.canvasSize.height,
+                  backgroundImage: showGrid 
+                    ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
+                    : 'none',
+                  backgroundSize: showGrid ? '20px 20px' : 'auto',
+                }}
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setSelectedElementId(null);
+                  }
+                }}
+              >
+                {template.elements.map(renderElement)}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Properties Panel - Collapsible */}
+      {/* Properties Panel - Full Height */}
       {showPropertiesPanel ? (
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0 h-full">
           <PropertiesPanel
             selectedElement={selectedElement}
             onUpdateElement={handleUpdateElement}
@@ -537,7 +544,7 @@ export const VisualEditor = ({
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 left-2 h-6 w-6 p-0"
+            className="absolute top-2 left-2 h-6 w-6 p-0 z-10"
             onClick={() => setShowPropertiesPanel(false)}
             title="Collapse Properties"
           >
@@ -545,7 +552,7 @@ export const VisualEditor = ({
           </Button>
         </div>
       ) : (
-        <div className="flex-shrink-0 w-12 border-l bg-card flex items-start justify-center pt-2">
+        <div className="flex-shrink-0 w-12 border-l bg-card flex items-start justify-center pt-4 h-full">
           <Button
             variant="ghost"
             size="sm"
