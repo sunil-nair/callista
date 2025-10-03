@@ -7,6 +7,7 @@ import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
+import { ElementContextMenu } from "./ElementContextMenu";
 import { TemplateElement, EmailTemplate } from "@/types/template";
 import { HTMLParser } from "@/utils/htmlParser";
 import { HTMLGenerator } from "@/utils/htmlGenerator";
@@ -177,6 +178,52 @@ export const VisualEditor = ({
     });
   };
 
+  const handleBringToFront = (id: string) => {
+    setTemplate((prev) => {
+      const maxZIndex = Math.max(...prev.elements.map((el) => el.zIndex), 0);
+      return {
+        ...prev,
+        elements: prev.elements.map((el) =>
+          el.id === id ? { ...el, zIndex: maxZIndex + 1 } : el
+        ),
+      };
+    });
+  };
+
+  const handleSendToBack = (id: string) => {
+    setTemplate((prev) => {
+      return {
+        ...prev,
+        elements: prev.elements.map((el) =>
+          el.id === id ? { ...el, zIndex: 0 } : el.id !== id && el.zIndex > 0 ? { ...el, zIndex: el.zIndex + 1 } : el
+        ),
+      };
+    });
+  };
+
+  const handleDuplicateElement = (id: string) => {
+    setTemplate((prev) => {
+      const element = prev.elements.find((el) => el.id === id);
+      if (!element) return prev;
+
+      const newElement = {
+        ...element,
+        id: uuidv4(),
+        position: {
+          x: element.position.x + 20,
+          y: element.position.y + 20,
+        },
+        zIndex: Math.max(...prev.elements.map((el) => el.zIndex), 0) + 1,
+      } as TemplateElement;
+
+      return {
+        ...prev,
+        elements: [...prev.elements, newElement],
+      };
+    });
+    toast.success("Element duplicated");
+  };
+
   const generateHTML = (useTableLayout: boolean = false): string => {
     return HTMLGenerator.generateHTML(template, useTableLayout);
   };
@@ -232,135 +279,144 @@ export const VisualEditor = ({
     const isEditing = element.id === editingTextId;
     
     return (
-      <Rnd
+      <ElementContextMenu
         key={element.id}
-        position={element.position}
-        size={element.size}
-        onDragStop={(e, d) => {
-          if (!isEditing) {
-            handleUpdateElement(element.id, {
-              position: { x: d.x, y: d.y },
-            });
-          }
-        }}
-        onResizeStop={(e, direction, ref, delta, position) => {
-          if (!isEditing) {
-            handleUpdateElement(element.id, {
-              size: {
-                width: parseInt(ref.style.width),
-                height: parseInt(ref.style.height),
-              },
-              position,
-            });
-          }
-        }}
-        bounds="parent"
-        style={{ zIndex: element.zIndex }}
-        className={`${!isEditing ? 'cursor-move' : 'cursor-text'} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-        onClick={() => setSelectedElementId(element.id)}
-        disableDragging={isEditing}
-        enableResizing={!isEditing}
+        onBringToFront={() => handleBringToFront(element.id)}
+        onBringForward={() => handleBringForward(element.id)}
+        onSendBackward={() => handleSendBackward(element.id)}
+        onSendToBack={() => handleSendToBack(element.id)}
+        onDuplicate={() => handleDuplicateElement(element.id)}
+        onDelete={() => handleDeleteElement(element.id)}
       >
-        <div 
-          className="w-full h-full"
-          onDoubleClick={() => {
-            if (element.type === 'text') {
-              setEditingTextId(element.id);
-              setSelectedElementId(element.id);
+        <Rnd
+          position={element.position}
+          size={element.size}
+          onDragStop={(e, d) => {
+            if (!isEditing) {
+              handleUpdateElement(element.id, {
+                position: { x: d.x, y: d.y },
+              });
             }
           }}
+          onResizeStop={(e, direction, ref, delta, position) => {
+            if (!isEditing) {
+              handleUpdateElement(element.id, {
+                size: {
+                  width: parseInt(ref.style.width),
+                  height: parseInt(ref.style.height),
+                },
+                position,
+              });
+            }
+          }}
+          bounds="parent"
+          style={{ zIndex: element.zIndex }}
+          className={`${!isEditing ? 'cursor-move' : 'cursor-text'} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+          onClick={() => setSelectedElementId(element.id)}
+          disableDragging={isEditing}
+          enableResizing={!isEditing}
         >
-          {element.type === 'text' && (
-            <>
-              {isEditing ? (
-                <textarea
-                  autoFocus
-                  value={element.content}
-                  onChange={(e) => handleUpdateElement(element.id, { content: e.target.value } as any)}
-                  onBlur={() => setEditingTextId(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setEditingTextId(null);
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    fontSize: element.style.fontSize,
-                    fontWeight: element.style.fontWeight,
-                    color: element.style.color,
-                    textAlign: element.style.textAlign,
-                    fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent',
-                    resize: 'none',
-                    overflow: 'hidden',
-                  }}
-                />
-              ) : (
-                <PlaceholderText
-                  content={element.content}
-                  style={{
-                    fontSize: element.style.fontSize,
-                    fontWeight: element.style.fontWeight,
-                    color: element.style.color,
-                    textAlign: element.style.textAlign,
-                    fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-                    width: '100%',
-                    height: '100%',
-                    overflow: 'hidden',
-                  }}
-                />
-              )}
-            </>
-          )}
-          
-          {element.type === 'image' && (
-            <img
-              src={element.src}
-              alt={element.alt}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: element.style.objectFit,
-                borderRadius: element.style.borderRadius,
-              }}
-            />
-          )}
-          
-          {element.type === 'shape' && (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: element.style.backgroundColor,
-                border: `${element.style.borderWidth}px solid ${element.style.borderColor}`,
-                borderRadius: element.shapeType === 'circle' ? '50%' : element.style.borderRadius,
-              }}
-            />
-          )}
-          
-          {element.type === 'button' && (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: element.style.backgroundColor,
-                color: element.style.color,
-                fontSize: element.style.fontSize,
-                borderRadius: element.style.borderRadius,
-                padding: `${element.style.paddingY}px ${element.style.paddingX}px`,
-              }}
-            >
-              {element.text}
-            </div>
-          )}
-        </div>
-      </Rnd>
+          <div 
+            className="w-full h-full"
+            onDoubleClick={() => {
+              if (element.type === 'text') {
+                setEditingTextId(element.id);
+                setSelectedElementId(element.id);
+              }
+            }}
+          >
+            {element.type === 'text' && (
+              <>
+                {isEditing ? (
+                  <textarea
+                    autoFocus
+                    value={element.content}
+                    onChange={(e) => handleUpdateElement(element.id, { content: e.target.value } as any)}
+                    onBlur={() => setEditingTextId(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setEditingTextId(null);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      fontSize: element.style.fontSize,
+                      fontWeight: element.style.fontWeight,
+                      color: element.style.color,
+                      textAlign: element.style.textAlign,
+                      fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      resize: 'none',
+                      overflow: 'hidden',
+                    }}
+                  />
+                ) : (
+                  <PlaceholderText
+                    content={element.content}
+                    style={{
+                      fontSize: element.style.fontSize,
+                      fontWeight: element.style.fontWeight,
+                      color: element.style.color,
+                      textAlign: element.style.textAlign,
+                      fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+                      width: '100%',
+                      height: '100%',
+                      overflow: 'hidden',
+                    }}
+                  />
+                )}
+              </>
+            )}
+            
+            {element.type === 'image' && (
+              <img
+                src={element.src}
+                alt={element.alt}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: element.style.objectFit,
+                  borderRadius: element.style.borderRadius,
+                }}
+              />
+            )}
+            
+            {element.type === 'shape' && (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: element.style.backgroundColor,
+                  border: `${element.style.borderWidth}px solid ${element.style.borderColor}`,
+                  borderRadius: element.shapeType === 'circle' ? '50%' : element.style.borderRadius,
+                }}
+              />
+            )}
+            
+            {element.type === 'button' && (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: element.style.backgroundColor,
+                  color: element.style.color,
+                  fontSize: element.style.fontSize,
+                  borderRadius: element.style.borderRadius,
+                  padding: `${element.style.paddingY}px ${element.style.paddingX}px`,
+                }}
+              >
+                {element.text}
+              </div>
+            )}
+          </div>
+        </Rnd>
+      </ElementContextMenu>
     );
   };
 
