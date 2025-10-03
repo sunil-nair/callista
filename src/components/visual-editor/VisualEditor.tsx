@@ -6,7 +6,9 @@ import { Eye, Save, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose }
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
+import { ImportHTMLDialog } from "./ImportHTMLDialog";
 import { TemplateElement, EmailTemplate } from "@/types/template";
+import { HTMLParser } from "@/utils/htmlParser";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -243,6 +245,27 @@ export const VisualEditor = ({
     }));
   };
 
+  const handleImportHTML = (html: string) => {
+    try {
+      const parsedElements = HTMLParser.parseHTML(html);
+      
+      if (parsedElements.length === 0) {
+        toast.error("No elements found in HTML");
+        return;
+      }
+
+      setTemplate((prev) => ({
+        ...prev,
+        elements: [...prev.elements, ...parsedElements],
+      }));
+      
+      toast.success(`Imported ${parsedElements.length} elements from HTML`);
+    } catch (error) {
+      console.error("Error parsing HTML:", error);
+      toast.error("Failed to parse HTML");
+    }
+  };
+
   const renderElement = (element: TemplateElement) => {
     const isSelected = element.id === selectedElementId;
     const isEditing = element.id === editingTextId;
@@ -457,6 +480,9 @@ export const VisualEditor = ({
           >
             Grid: {showGrid ? 'ON' : 'OFF'}
           </Button>
+
+          {/* Import HTML */}
+          <ImportHTMLDialog onImport={handleImportHTML} />
 
           <div className="ml-auto flex gap-2">
             {onPreview && (
