@@ -53,58 +53,71 @@ export class HTMLGenerator {
   }
 
   private static generateTableBasedHTML(template: EmailTemplate, elements: TemplateElement[]): string {
-    // Sort elements by Y position to create rows
-    const sortedByY = [...elements].sort((a, b) => a.position.y - b.position.y);
+    // Use a wrapper table with a single cell containing absolutely positioned elements
+    // This maintains the visual layout while using table structure for email compatibility
     
-    const rows: TemplateElement[][] = [];
-    let currentRow: TemplateElement[] = [];
-    let currentY = -1;
-    const yTolerance = 10; // Elements within 10px are considered same row
-
-    sortedByY.forEach(el => {
-      if (currentY === -1 || Math.abs(el.position.y - currentY) <= yTolerance) {
-        currentRow.push(el);
-        currentY = el.position.y;
-      } else {
-        if (currentRow.length > 0) {
-          rows.push([...currentRow]);
-        }
-        currentRow = [el];
-        currentY = el.position.y;
-      }
-    });
-    
-    if (currentRow.length > 0) {
-      rows.push(currentRow);
-    }
-
-    const rowsHTML = rows.map(row => {
-      const cellsHTML = row
-        .sort((a, b) => a.position.x - b.position.x)
-        .map(el => this.generateTableCell(el))
-        .join('');
+    const elementsHTML = elements.map((el) => {
+      const style = `position: absolute; left: ${el.position.x}px; top: ${el.position.y}px; width: ${el.size.width}px; height: ${el.size.height}px;`;
       
-      return `<tr>${cellsHTML}</tr>`;
+      if (el.type === 'text') {
+        const fontFamily = el.style.fontFamily || 'Arial, Helvetica, sans-serif';
+        return `<div style="${style} font-size: ${el.style.fontSize}px; font-weight: ${el.style.fontWeight}; color: ${el.style.color}; text-align: ${el.style.textAlign}; font-family: ${fontFamily};">${el.content}</div>`;
+      }
+      
+      if (el.type === 'image') {
+        return `<img src="${el.src}" alt="${el.alt}" style="${style} object-fit: ${el.style.objectFit}; border-radius: ${el.style.borderRadius}px; max-width: 100%; display: block;" />`;
+      }
+      
+      if (el.type === 'shape') {
+        const shapeStyle = el.shapeType === 'circle' 
+          ? `${style} background-color: ${el.style.backgroundColor}; border: ${el.style.borderWidth}px solid ${el.style.borderColor}; border-radius: 50%;`
+          : `${style} background-color: ${el.style.backgroundColor}; border: ${el.style.borderWidth}px solid ${el.style.borderColor}; border-radius: ${el.style.borderRadius}px;`;
+        return `<div style="${shapeStyle}"></div>`;
+      }
+      
+      if (el.type === 'button') {
+        return `<div style="${style}">
+          <a href="${el.href}" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background-color: ${el.style.backgroundColor}; color: ${el.style.color}; font-size: ${el.style.fontSize}px; font-family: Arial, Helvetica, sans-serif; border-radius: ${el.style.borderRadius}px; text-decoration: none; padding: ${el.style.paddingY}px ${el.style.paddingX}px; box-sizing: border-box;">${el.text}</a>
+        </div>`;
+      }
+      
+      return '';
     }).join('\n');
 
     return `<!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
   <!--[if mso]>
   <style type="text/css">
-    table {border-collapse: collapse;}
+    table {border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
+    td {border-collapse: collapse;}
   </style>
   <![endif]-->
 </head>
 <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f4f4;">
     <tr>
       <td align="center" style="padding: 20px 0;">
-        <table role="presentation" width="${template.canvasSize.width}" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; max-width: ${template.canvasSize.width}px;">
-          ${rowsHTML}
+        <table role="presentation" width="${template.canvasSize.width}" cellspacing="0" cellpadding="0" border="0" style="max-width: ${template.canvasSize.width}px; background-color: #ffffff;">
+          <tr>
+            <td style="position: relative; width: ${template.canvasSize.width}px; height: ${template.canvasSize.height}px; padding: 0;">
+              <!--[if mso]>
+              <table role="presentation" width="${template.canvasSize.width}" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="width: ${template.canvasSize.width}px; height: ${template.canvasSize.height}px;">
+              <![endif]-->
+              ${elementsHTML}
+              <!--[if mso]>
+                  </td>
+                </tr>
+              </table>
+              <![endif]-->
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
