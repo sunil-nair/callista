@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           html: string
           id: string
+          json_template: Json | null
           name: string
           updated_at: string
         }
@@ -26,6 +27,7 @@ export type Database = {
           created_at?: string
           html: string
           id?: string
+          json_template?: Json | null
           name: string
           updated_at?: string
         }
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           html?: string
           id?: string
+          json_template?: Json | null
           name?: string
           updated_at?: string
         }
