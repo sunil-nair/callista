@@ -7,10 +7,8 @@ import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { EmailTemplate } from "@/types/template";
 
-// Helper function to work with callista schema - bypasses TypeScript limitations
-const callistaDb = {
-  from: (table: string) => (supabase as any).schema('callista').from(table)
-};
+// Use public schema for email templates
+const emailTemplatesTable = () => supabase.from('email_templates');
 
 interface Template {
   id: string;
@@ -35,8 +33,7 @@ const Index = () => {
 
   const loadTemplates = async () => {
     try {
-      const { data, error } = await callistaDb
-        .from("email_templates")
+      const { data, error } = await emailTemplatesTable()
         .select("*")
         .order("updated_at", { ascending: false });
 
@@ -60,8 +57,7 @@ const Index = () => {
     try {
       if (selectedTemplate) {
         // Update existing template
-        const { error } = await callistaDb
-          .from("email_templates")
+        const { error } = await emailTemplatesTable()
           .update({ name, api_shortcode: apiShortcode, html, json_template: template })
           .eq("id", selectedTemplate.id);
 
@@ -69,8 +65,7 @@ const Index = () => {
         toast.success("Template updated successfully!");
       } else {
         // Create new template
-        const { error } = await callistaDb
-          .from("email_templates")
+        const { error } = await emailTemplatesTable()
           .insert([{ name, api_shortcode: apiShortcode, html, json_template: template }]);
 
         if (error) throw error;
@@ -87,8 +82,7 @@ const Index = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await callistaDb
-        .from("email_templates")
+      const { error } = await emailTemplatesTable()
         .delete()
         .eq("id", id);
 
