@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Save } from "lucide-react";
+import { Eye, Save, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
@@ -33,6 +33,8 @@ export const VisualEditor = ({
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
+  const [showComponentPanel, setShowComponentPanel] = useState(true);
+  const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const canvasSizes = {
@@ -333,12 +335,37 @@ export const VisualEditor = ({
   };
 
   return (
-    <div className="flex h-full">
-      <ComponentPalette onAddElement={handleAddElement} />
+    <div className="flex h-full overflow-hidden">
+      {/* Component Palette - Collapsible */}
+      {showComponentPanel ? (
+        <div className="relative flex-shrink-0">
+          <ComponentPalette onAddElement={handleAddElement} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-6 w-6 p-0"
+            onClick={() => setShowComponentPanel(false)}
+            title="Collapse Components"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex-shrink-0 w-12 border-r bg-card flex items-start justify-center pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowComponentPanel(true)}
+            title="Expand Components"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <div className="border-b bg-card p-4 flex items-center gap-4">
+        <div className="border-b bg-card p-4 flex items-center gap-4 flex-shrink-0">
           <Input
             placeholder="Template name..."
             value={templateName}
@@ -394,9 +421,9 @@ export const VisualEditor = ({
           </div>
         </div>
 
-        {/* Canvas */}
+        {/* Canvas - Scrollable */}
         <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-background to-accent/5">
-          <div className="mx-auto relative" style={{ width: template.canvasSize.width + 80 }}>
+          <div className="mx-auto relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
             {/* Ruler guides */}
             <div className="absolute -left-8 top-0 bottom-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground">
               {Array.from({ length: Math.floor(template.canvasSize.height / 50) }).map((_, i) => (
@@ -451,13 +478,38 @@ export const VisualEditor = ({
         </div>
       </div>
 
-      <PropertiesPanel
-        selectedElement={selectedElement}
-        onUpdateElement={handleUpdateElement}
-        onDeleteElement={handleDeleteElement}
-        onBringForward={handleBringForward}
-        onSendBackward={handleSendBackward}
-      />
+      {/* Properties Panel - Collapsible */}
+      {showPropertiesPanel ? (
+        <div className="relative flex-shrink-0">
+          <PropertiesPanel
+            selectedElement={selectedElement}
+            onUpdateElement={handleUpdateElement}
+            onDeleteElement={handleDeleteElement}
+            onBringForward={handleBringForward}
+            onSendBackward={handleSendBackward}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 left-2 h-6 w-6 p-0"
+            onClick={() => setShowPropertiesPanel(false)}
+            title="Collapse Properties"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex-shrink-0 w-12 border-l bg-card flex items-start justify-center pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPropertiesPanel(true)}
+            title="Expand Properties"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
