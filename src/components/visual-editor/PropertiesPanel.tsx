@@ -299,6 +299,28 @@ export const PropertiesPanel = ({
               />
             </div>
             <div>
+              <Label htmlFor="objectPosition" className="text-xs">Object Position</Label>
+              <Select 
+                value={selectedElement.style.objectPosition || 'center'} 
+                onValueChange={(v) => handleStyleUpdate('objectPosition', v)}
+              >
+                <SelectTrigger className="h-8 mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card z-50">
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="top">Top</SelectItem>
+                  <SelectItem value="bottom">Bottom</SelectItem>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="top left">Top Left</SelectItem>
+                  <SelectItem value="top right">Top Right</SelectItem>
+                  <SelectItem value="bottom left">Bottom Left</SelectItem>
+                  <SelectItem value="bottom right">Bottom Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="borderRadius" className="text-xs">Border Radius</Label>
               <Input
                 id="borderRadius"

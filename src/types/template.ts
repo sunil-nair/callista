@@ -36,6 +36,7 @@ export interface ImageElement extends BaseElement {
   alt: string;
   style: {
     objectFit: 'contain' | 'cover' | 'fill';
+    objectPosition?: string;
     borderRadius: number;
   };
 }

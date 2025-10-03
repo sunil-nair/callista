@@ -392,6 +392,7 @@ export const VisualEditor = ({
                   width: '100%',
                   height: '100%',
                   objectFit: element.style.objectFit,
+                  objectPosition: element.style.objectPosition || 'center',
                   borderRadius: element.style.borderRadius,
                 }}
               />

@@ -30,7 +30,7 @@ AVAILABLE COMPONENTS:
    - Properties: content (string), fontSize (number), fontWeight (string), color (hex), textAlign (left/center/right), fontFamily (optional)
    
 2. IMAGE: Display images
-   - Properties: src (URL string), alt (string), objectFit (contain/cover/fill), borderRadius (number)
+   - Properties: src (URL string), alt (string), objectFit (contain/cover/fill), objectPosition (center/top/bottom/left/right/top left/top right/bottom left/bottom right), borderRadius (number)
    
 3. SHAPE: Rectangles or circles for backgrounds/decoration
    - Properties: shapeType (rectangle/circle), backgroundColor (hex), borderColor (hex), borderWidth (number), borderRadius (number)
@@ -147,6 +147,7 @@ Return ONLY valid JSON in this exact format:
             alt: el.alt ?? '',
             style: {
               objectFit: el.style?.objectFit ?? el.objectFit ?? 'cover',
+              objectPosition: el.style?.objectPosition ?? el.objectPosition ?? 'center',
               borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 0,
             },
           };
