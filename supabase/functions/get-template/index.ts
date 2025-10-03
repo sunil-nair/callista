@@ -39,7 +39,7 @@ serve(async (req) => {
     // Query the email_templates table from callista schema
     const { data, error } = await supabase
       .from('callista.email_templates')
-      .select('id, name, html, json_template, api_shortcode, created_at, updated_at')
+      .select('html')
       .eq('api_shortcode', shortcode)
       .single();
 
@@ -65,16 +65,17 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Successfully fetched template: ${data.name}`);
+    console.log(`Successfully fetched template HTML`);
 
+    // Return the HTML directly
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        template: data 
-      }), 
+      data.html, 
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'text/html; charset=utf-8' 
+        },
       }
     );
 

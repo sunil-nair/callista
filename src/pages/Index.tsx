@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { EmailTemplate } from "@/types/template";
 
+// Helper function to work with callista schema - bypasses TypeScript limitations
+const callistaDb = {
+  from: (table: string) => (supabase as any).from(`callista.${table}`)
+};
+
 interface Template {
   id: string;
   name: string;
@@ -30,10 +35,10 @@ const Index = () => {
 
   const loadTemplates = async () => {
     try {
-      const { data, error } = await supabase
-        .from("callista.email_templates" as any)
+      const { data, error } = await callistaDb
+        .from("email_templates")
         .select("*")
-        .order("updated_at", { ascending: false }) as any;
+        .order("updated_at", { ascending: false });
 
       if (error) throw error;
       
@@ -55,18 +60,18 @@ const Index = () => {
     try {
       if (selectedTemplate) {
         // Update existing template
-        const { error } = await supabase
-          .from("callista.email_templates" as any)
-          .update({ name, api_shortcode: apiShortcode, html, json_template: template as any })
+        const { error } = await callistaDb
+          .from("email_templates")
+          .update({ name, api_shortcode: apiShortcode, html, json_template: template })
           .eq("id", selectedTemplate.id);
 
         if (error) throw error;
         toast.success("Template updated successfully!");
       } else {
         // Create new template
-        const { error } = await supabase
-          .from("callista.email_templates" as any)
-          .insert([{ name, api_shortcode: apiShortcode, html, json_template: template as any }]);
+        const { error } = await callistaDb
+          .from("email_templates")
+          .insert([{ name, api_shortcode: apiShortcode, html, json_template: template }]);
 
         if (error) throw error;
         toast.success("Template created successfully!");
@@ -82,8 +87,8 @@ const Index = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("callista.email_templates" as any)
+      const { error } = await callistaDb
+        .from("email_templates")
         .delete()
         .eq("id", id);
 

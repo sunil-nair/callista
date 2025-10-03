@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  callista-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: callista-email-designer
+    restart: unless-stopped
+    ports:
+      - "3050:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - callista-network
+
+networks:
+  callista-network:
+    driver: bridge
