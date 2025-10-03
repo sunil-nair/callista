@@ -86,11 +86,33 @@ Return ONLY valid JSON in this exact format:
     }
 
     const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    let generatedContent = data.choices?.[0]?.message?.content ?? '';
     
     console.log('Generated design:', generatedContent);
     
-    const design = JSON.parse(generatedContent);
+    // Normalize to raw JSON (strip code fences and extract JSON block if needed)
+    const sanitizeToJson = (text: string) => {
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        // Try fenced block ```json ... ``` or ``` ... ```
+        const fenceMatch = text.match(/```(?:json)?\n([\s\S]*?)```/i);
+        if (fenceMatch?.[1]) {
+          const inner = fenceMatch[1].trim();
+          try { return JSON.parse(inner); } catch (_) { /* continue */ }
+        }
+        // Fallback: take substring from first { to last }
+        const first = text.indexOf('{');
+        const last = text.lastIndexOf('}');
+        if (first !== -1 && last !== -1 && last > first) {
+          const slice = text.slice(first, last + 1);
+          return JSON.parse(slice);
+        }
+        throw new Error('Model did not return valid JSON.');
+      }
+    };
+
+    const design = sanitizeToJson(generatedContent);
 
     return new Response(JSON.stringify(design), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
