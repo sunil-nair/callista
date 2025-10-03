@@ -8,7 +8,7 @@ import { Mail } from "lucide-react";
 import { EmailTemplate } from "@/types/template";
 
 // Use public schema for email templates
-const emailTemplatesTable = () => supabase.from('email_templates');
+const emailTemplatesTable = () => (supabase as any).from('email_templates');
 
 interface Template {
   id: string;
