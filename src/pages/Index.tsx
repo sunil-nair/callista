@@ -121,9 +121,17 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Left Sidebar */}
-      <div className="w-80 flex-shrink-0">
+    <div className="flex flex-col h-screen overflow-hidden bg-background">
+      {/* Minimal Full-Screen Navbar */}
+      <header className="bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600 h-14 flex-shrink-0 shadow-md">
+        <div className="h-full px-6 flex items-center">
+          <h1 className="text-white text-lg font-semibold">Email Template Designer</h1>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Sidebar - Templates */}
         <TemplateList
           templates={templates}
           selectedId={selectedTemplate?.id}
@@ -132,25 +140,9 @@ const Index = () => {
           onDelete={handleDelete}
           onPreview={handlePreview}
         />
-      </div>
 
-      {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 shadow-medium">
-          <div className="flex items-center gap-3">
-            <Mail className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Email Template Designer</h1>
-              <p className="text-sm text-primary-foreground/80">
-                Create beautiful email templates with placeholders
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Editor */}
-        <div className="flex-1 overflow-hidden">
+        {/* Editor Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           <VisualEditor
             key={selectedTemplate?.id || "new"}
             initialName={selectedTemplate?.name || ""}
