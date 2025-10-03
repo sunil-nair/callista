@@ -55,56 +55,63 @@ rsync -avz /path/to/callista/ user@your-vps-ip:/opt/callista/
 
 ## Step 2: Configure Supabase Database
 
-### 2.1 Run Database Migration
+### 2.1 Apply Database Migrations
 
-The migration creates the `callista` schema and `email_templates` table.
+The project includes migration files in `supabase/migrations/` that create the database schema.
 
 **Option A: Using Supabase Studio (Web UI)**
 
 1. Open your Supabase instance at `https://dab.nesterli.co`
 2. Navigate to **SQL Editor**
-3. Copy the contents of `supabase/migrations/20251003183843_dcf4ebad-9a5b-4e7b-866f-6a09060f5294.sql`
-4. Paste into the SQL Editor
-5. Click **Run**
+3. For each migration file in `supabase/migrations/` (in timestamp order):
+   - Open the file
+   - Copy its contents
+   - Paste into SQL Editor
+   - Click **Run**
 
-**Option B: Using Supabase CLI**
+**Option B: Using psql (Batch Apply)**
 
 ```bash
 cd /opt/callista
-supabase db push
+
+# Apply all migrations in order
+for migration in supabase/migrations/*.sql; do
+  echo "Applying $migration..."
+  psql "postgresql://postgres:YOUR_PASSWORD@localhost:5432/postgres" -f "$migration"
+done
 ```
 
-**Option C: Using psql directly**
-
-```bash
-# Replace with your actual database credentials
-psql "postgresql://postgres:YOUR_PASSWORD@localhost:5432/postgres" \
-  -f supabase/migrations/20251003183843_dcf4ebad-9a5b-4e7b-866f-6a09060f5294.sql
-```
+**What these migrations create:**
+- Table: `public.email_templates`
+  - `id` (UUID, primary key)
+  - `name` (text, template name)
+  - `api_shortcode` (text, unique shortcode for API access)
+  - `html` (text, rendered HTML)
+  - `json_template` (jsonb, template structure)
+  - `created_at`, `updated_at` (timestamps)
+- RLS policies for public access (SELECT, INSERT, UPDATE, DELETE)
+- Trigger function `handle_updated_at()` with proper security settings
+- Trigger `email_templates_updated_at` on the table
 
 ### 2.2 Verify Database Setup
 
 Connect to your Supabase database and verify:
 
 ```sql
--- Check schema exists
-SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'callista';
-
 -- Check table exists
 SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'callista' AND table_name = 'email_templates';
+WHERE table_schema = 'public' AND table_name = 'email_templates';
 
 -- Check table structure
-\d callista.email_templates
+\d public.email_templates
 
 -- Check RLS is enabled
 SELECT tablename, rowsecurity FROM pg_tables 
-WHERE schemaname = 'callista' AND tablename = 'email_templates';
+WHERE schemaname = 'public' AND tablename = 'email_templates';
 ```
 
 Expected output:
-- Schema `callista` exists
-- Table `callista.email_templates` exists with columns: id, name, html, api_shortcode, created_at, updated_at
+- Table `public.email_templates` exists with all columns
 - RLS is enabled (`rowsecurity` = true)
 
 ---

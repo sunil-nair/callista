@@ -19,13 +19,15 @@
 ### 1️⃣ Setup Database (5 mins)
 
 ```bash
-# Copy migration SQL to your Supabase
+# Copy ALL migration files to your Supabase
 # Run via Supabase Studio SQL Editor or:
-psql "postgresql://postgres:PASSWORD@localhost:5432/postgres" \
-  -f supabase/migrations/20251003183843_*.sql
+cd /opt/callista
+for migration in supabase/migrations/*.sql; do
+  psql "postgresql://postgres:PASSWORD@localhost:5432/postgres" -f "$migration"
+done
 
 # Verify
-psql ... -c "SELECT * FROM callista.email_templates LIMIT 1;"
+psql ... -c "SELECT * FROM public.email_templates LIMIT 1;"
 ```
 
 ---
@@ -155,7 +157,10 @@ curl "https://dab.nesterli.co/functions/v1/get-template?shortcode=test"
 ```bash
 # === 1. Database ===
 # Run in Supabase Studio SQL Editor or via psql
-# Copy contents of: supabase/migrations/20251003183843_*.sql
+cd /opt/callista
+for migration in supabase/migrations/*.sql; do
+  psql "postgresql://postgres:PASSWORD@localhost:5432/postgres" -f "$migration"
+done
 
 # === 2. Edge Functions ===
 cd /path/to/supabase
@@ -291,7 +296,7 @@ sudo systemctl stop caddy
 - [ ] Docker container is running: `docker-compose ps`
 - [ ] Caddy is running: `sudo systemctl status caddy`
 - [ ] Logs are accessible: `docker-compose logs` and `sudo tail -f /var/log/caddy/callista.log`
-- [ ] Database has `callista` schema: Check in Supabase Studio
+- [ ] Database has `public.email_templates` table: Check in Supabase Studio
 - [ ] Edge functions are deployed: `supabase functions list`
 
 ---
