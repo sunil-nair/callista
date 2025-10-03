@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Save, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose } from "lucide-react";
+import { Eye, Save, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3 } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
@@ -465,79 +465,96 @@ export const VisualEditor = ({
       
       {/* Canvas Area - Center Section */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
-        {/* Canvas Toolbar */}
-        <div className="border-b bg-card/50 backdrop-blur-sm px-4 py-3 flex items-center gap-3 flex-shrink-0">
-          <Input
-            placeholder="Template name..."
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
-            className="max-w-xs h-9"
-          />
-          <Input
-            placeholder="API shortcode..."
-            value={apiShortcode}
-            onChange={(e) => setApiShortcode(e.target.value)}
-            className="max-w-xs h-9"
-          />
-          
-          {/* Canvas Size Selector */}
-          <div className="flex gap-1 border rounded-md p-0.5 bg-background">
-            <Button
-              variant={canvasSize === 'mobile' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleCanvasSizeChange('mobile')}
-              className="h-8 text-xs"
-            >
-              Mobile
-            </Button>
-            <Button
-              variant={canvasSize === 'tablet' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleCanvasSizeChange('tablet')}
-              className="h-8 text-xs"
-            >
-              Tablet
-            </Button>
-            <Button
-              variant={canvasSize === 'desktop' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleCanvasSizeChange('desktop')}
-              className="h-8 text-xs"
-            >
-              Desktop
-            </Button>
+        {/* Canvas Toolbar - Reorganized for clarity */}
+        <div className="border-b bg-card/50 backdrop-blur-sm flex-shrink-0">
+          {/* Top Row: Template Info */}
+          <div className="px-4 py-2 border-b flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Name:</label>
+              <Input
+                placeholder="Enter template name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="h-8 text-sm flex-1 max-w-[250px]"
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-1">
+              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">API:</label>
+              <Input
+                placeholder="api-shortcode"
+                value={apiShortcode}
+                onChange={(e) => setApiShortcode(e.target.value)}
+                className="h-8 text-sm flex-1 max-w-[200px] font-mono"
+              />
+            </div>
+            <div className="ml-auto flex gap-2">
+              {onPreview && (
+                <Button variant="outline" size="sm" onClick={handlePreview} className="h-8">
+                  <Eye className="h-4 w-4 mr-1.5" />
+                  Preview
+                </Button>
+              )}
+              <Button size="sm" onClick={handleSave} className="h-8">
+                <Save className="h-4 w-4 mr-1.5" />
+                Save
+              </Button>
+            </div>
           </div>
 
-          {/* Grid Toggle */}
-          <Button
-            variant={showGrid ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowGrid(!showGrid)}
-            className="h-8 text-xs"
-          >
-            Grid: {showGrid ? 'ON' : 'OFF'}
-          </Button>
-
-          {/* Import HTML */}
-          <ImportHTMLDialog onImport={handleImportHTML} />
-
-          {/* AI Design */}
-          <AIDesignDialog 
-            canvasSize={template.canvasSize} 
-            onDesignGenerated={handleAIDesignGenerated}
-          />
-
-          <div className="ml-auto flex gap-2">
-            {onPreview && (
-              <Button variant="outline" size="sm" onClick={handlePreview} className="h-8">
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
+          {/* Bottom Row: Tools */}
+          <div className="px-4 py-2 flex items-center gap-2">
+            {/* Canvas Size Selector with Icons */}
+            <div className="flex gap-0.5 border rounded-md p-0.5 bg-background">
+              <Button
+                variant={canvasSize === 'mobile' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleCanvasSizeChange('mobile')}
+                className="h-7 px-2"
+                title="Mobile (375px)"
+              >
+                <Smartphone className="h-3.5 w-3.5" />
               </Button>
-            )}
-            <Button size="sm" onClick={handleSave} className="h-8">
-              <Save className="h-4 w-4 mr-2" />
-              Save Template
+              <Button
+                variant={canvasSize === 'tablet' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleCanvasSizeChange('tablet')}
+                className="h-7 px-2"
+                title="Tablet (768px)"
+              >
+                <Tablet className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant={canvasSize === 'desktop' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleCanvasSizeChange('desktop')}
+                className="h-7 px-2"
+                title="Desktop (1200px)"
+              >
+                <Monitor className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Grid Toggle */}
+            <Button
+              variant={showGrid ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setShowGrid(!showGrid)}
+              className="h-7 px-2"
+              title={`Grid ${showGrid ? 'ON' : 'OFF'}`}
+            >
+              <Grid3x3 className="h-3.5 w-3.5" />
             </Button>
+
+            <div className="w-px h-5 bg-border" />
+
+            {/* Import HTML */}
+            <ImportHTMLDialog onImport={handleImportHTML} />
+
+            {/* AI Design */}
+            <AIDesignDialog 
+              canvasSize={template.canvasSize} 
+              onDesignGenerated={handleAIDesignGenerated}
+            />
           </div>
         </div>
 

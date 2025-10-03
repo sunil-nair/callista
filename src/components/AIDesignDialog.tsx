@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +15,6 @@ interface AIDesignDialogProps {
 export const AIDesignDialog = ({ canvasSize, onDesignGenerated }: AIDesignDialogProps) => {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState("google/gemini-2.5-flash");
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
@@ -34,7 +32,7 @@ export const AIDesignDialog = ({ canvasSize, onDesignGenerated }: AIDesignDialog
     
     try {
       const { data, error } = await supabase.functions.invoke('design-with-ai', {
-        body: { prompt, canvasSize, model }
+        body: { prompt, canvasSize }
       });
 
       if (error) throw error;
@@ -81,22 +79,6 @@ export const AIDesignDialog = ({ canvasSize, onDesignGenerated }: AIDesignDialog
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">AI Model</label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="google/gemini-2.5-pro">Gemini 2.5 Pro (Best quality)</SelectItem>
-                <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (Balanced - Free)</SelectItem>
-                <SelectItem value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Fastest)</SelectItem>
-                <SelectItem value="openai/gpt-5">GPT-5 (Premium)</SelectItem>
-                <SelectItem value="openai/gpt-5-mini">GPT-5 Mini (Fast)</SelectItem>
-                <SelectItem value="openai/gpt-5-nano">GPT-5 Nano (Fastest)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Design Prompt</label>
             <Textarea

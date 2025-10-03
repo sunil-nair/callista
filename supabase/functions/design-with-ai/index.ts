@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, canvasSize, model: requestModel } = await req.json();
+    const { prompt, canvasSize } = await req.json();
     
     const apiKey = Deno.env.get('LOVABLE_API_KEY');
-    const model = requestModel || Deno.env.get('LLM_MODEL') || 'google/gemini-2.5-flash';
+    const model = Deno.env.get('LLM_MODEL') || 'google/gemini-2.5-flash';
     
     if (!apiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
