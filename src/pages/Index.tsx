@@ -9,7 +9,7 @@ import { EmailTemplate } from "@/types/template";
 
 // Helper function to work with callista schema - bypasses TypeScript limitations
 const callistaDb = {
-  from: (table: string) => (supabase as any).from(`callista.${table}`)
+  from: (table: string) => (supabase as any).schema('callista').from(table)
 };
 
 interface Template {
