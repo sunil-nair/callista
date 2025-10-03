@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Rnd } from "react-rnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ export const VisualEditor = ({
   const [showComponentPanel, setShowComponentPanel] = useState(true);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const canvasSizes = {
@@ -53,6 +54,15 @@ export const VisualEditor = ({
   };
 
   const selectedElement = template.elements.find((el) => el.id === selectedElementId) || null;
+
+  // Detect changes by comparing current state with initial state
+  useEffect(() => {
+    const nameChanged = templateName !== initialName;
+    const shortcodeChanged = apiShortcode !== initialApiShortcode;
+    const templateChanged = JSON.stringify(template) !== JSON.stringify(initialTemplate);
+    
+    setHasChanges(nameChanged || shortcodeChanged || templateChanged);
+  }, [templateName, apiShortcode, template, initialName, initialApiShortcode, initialTemplate]);
 
   const handleAddElement = (type: 'text' | 'image' | 'shape' | 'button') => {
     let newElement: TemplateElement;
@@ -245,6 +255,7 @@ export const VisualEditor = ({
 
     const html = generateHTML();
     onSave(templateName, apiShortcode, template, html);
+    setHasChanges(false); // Reset after save
   };
 
   const handlePreview = () => {
@@ -494,7 +505,7 @@ export const VisualEditor = ({
                   Preview
                 </Button>
               )}
-              <Button size="sm" onClick={handleSave} className="h-8">
+              <Button size="sm" onClick={handleSave} className="h-8" disabled={!hasChanges}>
                 <Save className="h-4 w-4 mr-1.5" />
                 Save
               </Button>
