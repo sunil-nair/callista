@@ -14,11 +14,11 @@ serve(async (req) => {
   try {
     const { prompt, canvasSize } = await req.json();
     
-    const apiKey = Deno.env.get('LLM_API_KEY');
-    const model = Deno.env.get('LLM_MODEL') || 'gpt-4o-mini';
+    const apiKey = Deno.env.get('LOVABLE_API_KEY');
+    const model = Deno.env.get('LLM_MODEL') || 'google/gemini-2.5-flash';
     
     if (!apiKey) {
-      throw new Error('LLM_API_KEY not configured');
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     const systemPrompt = `You are an email template design assistant. Generate a JSON template for an email design based on the user's request.
@@ -63,7 +63,7 @@ Return ONLY valid JSON in this exact format:
 
     console.log('Calling LLM with model:', model);
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -75,8 +75,7 @@ Return ONLY valid JSON in this exact format:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }
+        temperature: 0.7
       }),
     });
 
