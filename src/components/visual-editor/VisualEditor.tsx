@@ -19,7 +19,7 @@ interface VisualEditorProps {
 
 const defaultTemplate: EmailTemplate = {
   elements: [],
-  canvasSize: { width: 600, height: 800 },
+  canvasSize: { width: 375, height: 667 }, // iPhone mobile size
 };
 
 export const VisualEditor = ({
@@ -31,7 +31,15 @@ export const VisualEditor = ({
   const [templateName, setTemplateName] = useState(initialName);
   const [template, setTemplate] = useState<EmailTemplate>(initialTemplate);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [canvasSize, setCanvasSize] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  const canvasSizes = {
+    mobile: { width: 375, height: 667 },
+    tablet: { width: 768, height: 1024 },
+    desktop: { width: 1200, height: 800 },
+  };
 
   const selectedElement = template.elements.find((el) => el.id === selectedElementId) || null;
 
@@ -224,6 +232,14 @@ export const VisualEditor = ({
     }
   };
 
+  const handleCanvasSizeChange = (size: 'mobile' | 'tablet' | 'desktop') => {
+    setCanvasSize(size);
+    setTemplate((prev) => ({
+      ...prev,
+      canvasSize: canvasSizes[size],
+    }));
+  };
+
   const renderElement = (element: TemplateElement) => {
     const isSelected = element.id === selectedElementId;
     
@@ -329,6 +345,41 @@ export const VisualEditor = ({
             onChange={(e) => setTemplateName(e.target.value)}
             className="max-w-xs"
           />
+          
+          {/* Canvas Size Selector */}
+          <div className="flex gap-1 border rounded-md p-1">
+            <Button
+              variant={canvasSize === 'mobile' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleCanvasSizeChange('mobile')}
+            >
+              Mobile
+            </Button>
+            <Button
+              variant={canvasSize === 'tablet' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleCanvasSizeChange('tablet')}
+            >
+              Tablet
+            </Button>
+            <Button
+              variant={canvasSize === 'desktop' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleCanvasSizeChange('desktop')}
+            >
+              Desktop
+            </Button>
+          </div>
+
+          {/* Grid Toggle */}
+          <Button
+            variant={showGrid ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowGrid(!showGrid)}
+          >
+            Grid: {showGrid ? 'ON' : 'OFF'}
+          </Button>
+
           <div className="ml-auto flex gap-2">
             {onPreview && (
               <Button variant="outline" onClick={handlePreview}>
@@ -345,13 +396,48 @@ export const VisualEditor = ({
 
         {/* Canvas */}
         <div className="flex-1 overflow-auto p-8 bg-gradient-to-b from-background to-accent/5">
-          <div className="mx-auto" style={{ width: template.canvasSize.width + 40 }}>
+          <div className="mx-auto relative" style={{ width: template.canvasSize.width + 80 }}>
+            {/* Ruler guides */}
+            <div className="absolute -left-8 top-0 bottom-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground">
+              {Array.from({ length: Math.floor(template.canvasSize.height / 50) }).map((_, i) => (
+                <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
+                  {i * 50}
+                </div>
+              ))}
+            </div>
+            <div className="absolute -top-8 left-0 right-0 h-8 bg-muted/50 flex items-center justify-start text-xs text-muted-foreground">
+              {Array.from({ length: Math.floor(template.canvasSize.width / 50) }).map((_, i) => (
+                <div key={i} style={{ position: 'absolute', left: i * 50, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+                  {i * 50}
+                </div>
+              ))}
+            </div>
+
+            {/* Safe zone guide overlay */}
+            <div 
+              className="absolute border-2 border-dashed border-primary/30 pointer-events-none"
+              style={{
+                left: 20,
+                top: 20,
+                right: 20,
+                bottom: 20,
+                width: template.canvasSize.width - 40,
+                height: template.canvasSize.height - 40,
+              }}
+            >
+              <span className="absolute -top-6 left-0 text-xs text-primary/60">Safe Zone (20px margin)</span>
+            </div>
+
             <div
               ref={canvasRef}
-              className="bg-white shadow-lg mx-auto relative"
+              className={`bg-white shadow-lg mx-auto relative ${showGrid ? 'bg-grid' : ''}`}
               style={{
                 width: template.canvasSize.width,
                 height: template.canvasSize.height,
+                backgroundImage: showGrid 
+                  ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
+                  : 'none',
+                backgroundSize: showGrid ? '20px 20px' : 'auto',
               }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {

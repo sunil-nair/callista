@@ -38,7 +38,7 @@ const Index = () => {
       
       const templatesWithParsed = (data || []).map(t => ({
         ...t,
-        json_template: (t.json_template as any) || { elements: [], canvasSize: { width: 600, height: 800 } }
+        json_template: (t.json_template as any) || { elements: [], canvasSize: { width: 375, height: 667 } }
       }));
       
       setTemplates(templatesWithParsed);
@@ -161,7 +161,7 @@ const Index = () => {
                 id: selectedTemplate?.id || "preview", 
                 name, 
                 html,
-                json_template: selectedTemplate?.json_template || { elements: [], canvasSize: { width: 600, height: 800 } },
+                json_template: selectedTemplate?.json_template || { elements: [], canvasSize: { width: 375, height: 667 } },
                 created_at: selectedTemplate?.created_at || new Date().toISOString(),
                 updated_at: selectedTemplate?.updated_at || new Date().toISOString()
               });
