@@ -8,6 +8,7 @@ import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
 import { ElementContextMenu } from "./ElementContextMenu";
+import { AIDesignDialog } from "../AIDesignDialog";
 import { TemplateElement, EmailTemplate } from "@/types/template";
 import { HTMLParser } from "@/utils/htmlParser";
 import { HTMLGenerator } from "@/utils/htmlGenerator";
@@ -282,6 +283,10 @@ export const VisualEditor = ({
     }
   };
 
+  const handleAIDesignGenerated = (template: EmailTemplate) => {
+    setTemplate(template);
+  };
+
   const renderElement = (element: TemplateElement) => {
     const isSelected = element.id === selectedElementId;
     const isEditing = element.id === editingTextId;
@@ -514,6 +519,12 @@ export const VisualEditor = ({
 
           {/* Import HTML */}
           <ImportHTMLDialog onImport={handleImportHTML} />
+
+          {/* AI Design */}
+          <AIDesignDialog 
+            canvasSize={template.canvasSize} 
+            onDesignGenerated={handleAIDesignGenerated}
+          />
 
           <div className="ml-auto flex gap-2">
             {onPreview && (
