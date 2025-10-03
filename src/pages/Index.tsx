@@ -148,12 +148,12 @@ const Index = () => {
             initialName={selectedTemplate?.name || ""}
             initialTemplate={selectedTemplate?.json_template}
             onSave={handleSave}
-            onPreview={(name, html) => {
+            onPreview={(name, html, template) => {
               setPreviewTemplate({ 
                 id: selectedTemplate?.id || "preview", 
                 name, 
                 html,
-                json_template: selectedTemplate?.json_template || { elements: [], canvasSize: { width: 375, height: 667 } },
+                json_template: template,
                 created_at: selectedTemplate?.created_at || new Date().toISOString(),
                 updated_at: selectedTemplate?.updated_at || new Date().toISOString()
               });

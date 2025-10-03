@@ -17,7 +17,7 @@ interface VisualEditorProps {
   initialName?: string;
   initialTemplate?: EmailTemplate;
   onSave: (name: string, template: EmailTemplate, html: string) => void;
-  onPreview?: (name: string, html: string) => void;
+  onPreview?: (name: string, html: string, template: EmailTemplate) => void;
 }
 
 const defaultTemplate: EmailTemplate = {
@@ -194,7 +194,7 @@ export const VisualEditor = ({
   const handlePreview = () => {
     if (onPreview) {
       const html = generateHTML();
-      onPreview(templateName || "Untitled Template", html);
+      onPreview(templateName || "Untitled Template", html, template);
     }
   };
 
