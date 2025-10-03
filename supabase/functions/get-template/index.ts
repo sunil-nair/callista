@@ -36,9 +36,9 @@ serve(async (req) => {
 
     console.log(`Fetching template with shortcode: ${shortcode}`);
 
-    // Query the email_templates table
+    // Query the email_templates table from callista schema
     const { data, error } = await supabase
-      .from('email_templates')
+      .from('callista.email_templates')
       .select('id, name, html, json_template, api_shortcode, created_at, updated_at')
       .eq('api_shortcode', shortcode)
       .single();

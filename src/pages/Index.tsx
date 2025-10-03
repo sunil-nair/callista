@@ -31,16 +31,16 @@ const Index = () => {
   const loadTemplates = async () => {
     try {
       const { data, error } = await supabase
-        .from("email_templates")
+        .from("callista.email_templates" as any)
         .select("*")
-        .order("updated_at", { ascending: false });
+        .order("updated_at", { ascending: false }) as any;
 
       if (error) throw error;
       
-      const templatesWithParsed = (data || []).map(t => ({
+      const templatesWithParsed = ((data as any[]) || []).map((t: any) => ({
         ...t,
-        json_template: (t.json_template as any) || { elements: [], canvasSize: { width: 375, height: 667 } }
-      }));
+        json_template: t.json_template || { elements: [], canvasSize: { width: 375, height: 667 } }
+      })) as Template[];
       
       setTemplates(templatesWithParsed);
     } catch (error) {
@@ -56,7 +56,7 @@ const Index = () => {
       if (selectedTemplate) {
         // Update existing template
         const { error } = await supabase
-          .from("email_templates")
+          .from("callista.email_templates" as any)
           .update({ name, api_shortcode: apiShortcode, html, json_template: template as any })
           .eq("id", selectedTemplate.id);
 
@@ -65,7 +65,7 @@ const Index = () => {
       } else {
         // Create new template
         const { error } = await supabase
-          .from("email_templates")
+          .from("callista.email_templates" as any)
           .insert([{ name, api_shortcode: apiShortcode, html, json_template: template as any }]);
 
         if (error) throw error;
@@ -83,7 +83,7 @@ const Index = () => {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("email_templates")
+        .from("callista.email_templates" as any)
         .delete()
         .eq("id", id);
 
