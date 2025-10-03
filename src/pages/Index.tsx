@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { VisualEditor } from "@/components/visual-editor/VisualEditor";
 import { TemplateList } from "@/components/TemplateList";
 import { PreviewDialog } from "@/components/PreviewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail } from "lucide-react";
+import { Mail, LogOut } from "lucide-react";
 import { EmailTemplate } from "@/types/template";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 // Use public schema for email templates
 const emailTemplatesTable = () => (supabase as any).from('email_templates');
@@ -21,6 +24,8 @@ interface Template {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
@@ -28,8 +33,16 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadTemplates();
-  }, []);
+    if (!authLoading && !user) {
+      navigate("/auth");
+    }
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      loadTemplates();
+    }
+  }, [user]);
 
   const loadTemplates = async () => {
     try {
@@ -54,6 +67,11 @@ const Index = () => {
   };
 
   const handleSave = async (name: string, apiShortcode: string, template: EmailTemplate, html: string) => {
+    if (!isAdmin) {
+      toast.error("Only administrators can save templates");
+      return;
+    }
+
     try {
       if (selectedTemplate) {
         // Update existing template
@@ -81,6 +99,11 @@ const Index = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdmin) {
+      toast.error("Only administrators can delete templates");
+      return;
+    }
+
     try {
       const { error } = await emailTemplatesTable()
         .delete()
@@ -109,23 +132,48 @@ const Index = () => {
     setIsPreviewOpen(true);
   };
 
-  if (isLoading) {
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-subtle">
         <div className="text-center">
           <Mail className="h-12 w-12 mx-auto mb-4 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Loading templates...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       {/* Minimal Full-Screen Navbar */}
       <header className="bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600 h-14 flex-shrink-0 shadow-md">
-        <div className="h-full px-6 flex items-center">
+        <div className="h-full px-6 flex items-center justify-between">
           <h1 className="text-white text-lg font-semibold">Email Template Designer</h1>
+          <div className="flex items-center gap-4">
+            {isAdmin && (
+              <span className="text-white/80 text-sm bg-white/20 px-3 py-1 rounded-full">
+                Admin
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-white hover:bg-white/20"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
