@@ -8,7 +8,7 @@ interface TemplateEditorProps {
   initialName?: string;
   initialHtml?: string;
   onSave: (name: string, html: string) => void;
-  onPreview?: () => void;
+  onPreview?: (name: string, html: string) => void;
 }
 
 export const TemplateEditor = ({ initialName = "", initialHtml = "", onSave, onPreview }: TemplateEditorProps) => {
@@ -88,7 +88,10 @@ export const TemplateEditor = ({ initialName = "", initialHtml = "", onSave, onP
         />
         <div className="ml-auto flex gap-2">
           {onPreview && (
-            <Button variant="outline" onClick={onPreview}>
+            <Button 
+              variant="outline" 
+              onClick={() => onPreview(templateName || "Untitled Template", getHtmlContent())}
+            >
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
