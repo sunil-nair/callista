@@ -114,7 +114,77 @@ Return ONLY valid JSON in this exact format:
 
     const design = sanitizeToJson(generatedContent);
 
-    return new Response(JSON.stringify(design), {
+    // Normalize to app schema
+    const normalizeBase = (el: any) => ({
+      id: String(el.id || crypto.randomUUID()),
+      type: el.type,
+      position: el.position ?? { x: 0, y: 0 },
+      size: el.size ?? { width: 100, height: 50 },
+      zIndex: typeof el.zIndex === 'number' ? el.zIndex : 1,
+    });
+
+    const normalizedElements = Array.isArray(design?.elements) ? design.elements.map((el: any) => {
+      const base = normalizeBase(el);
+      switch (el.type) {
+        case 'text':
+          return {
+            ...base,
+            type: 'text',
+            content: el.content ?? '',
+            style: {
+              fontSize: el.style?.fontSize ?? el.fontSize ?? 16,
+              fontWeight: el.style?.fontWeight ?? el.fontWeight ?? 'normal',
+              color: el.style?.color ?? el.color ?? '#000000',
+              textAlign: el.style?.textAlign ?? el.textAlign ?? 'left',
+              fontFamily: el.style?.fontFamily ?? el.fontFamily,
+            },
+          };
+        case 'image':
+          return {
+            ...base,
+            type: 'image',
+            src: el.src ?? '',
+            alt: el.alt ?? '',
+            style: {
+              objectFit: el.style?.objectFit ?? el.objectFit ?? 'cover',
+              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 0,
+            },
+          };
+        case 'shape':
+          return {
+            ...base,
+            type: 'shape',
+            shapeType: el.shapeType ?? 'rectangle',
+            style: {
+              backgroundColor: el.style?.backgroundColor ?? el.backgroundColor ?? '#FFFFFF',
+              borderColor: el.style?.borderColor ?? el.borderColor ?? '#000000',
+              borderWidth: el.style?.borderWidth ?? el.borderWidth ?? 0,
+              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 0,
+            },
+          };
+        case 'button':
+          return {
+            ...base,
+            type: 'button',
+            text: el.text ?? 'Click',
+            href: el.href ?? '#',
+            style: {
+              backgroundColor: el.style?.backgroundColor ?? el.backgroundColor ?? '#000000',
+              color: el.style?.color ?? el.color ?? '#FFFFFF',
+              fontSize: el.style?.fontSize ?? el.fontSize ?? 16,
+              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 6,
+              paddingX: el.style?.paddingX ?? el.paddingX ?? 12,
+              paddingY: el.style?.paddingY ?? el.paddingY ?? 8,
+            },
+          };
+        default:
+          return base; // unknown types pass-through
+      }
+    }) : [];
+
+    const appDesign = { elements: normalizedElements };
+
+    return new Response(JSON.stringify(appDesign), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
