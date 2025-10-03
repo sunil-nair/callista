@@ -1,79 +1,91 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req: Request) => {
+serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const url = new URL(req.url);
-    const templateId = url.searchParams.get("id");
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!templateId) {
+    console.log('Received request to get-template');
+
+    // Get shortcode from query parameters
+    const url = new URL(req.url);
+    const shortcode = url.searchParams.get('shortcode');
+
+    if (!shortcode) {
+      console.error('No shortcode provided');
       return new Response(
-        JSON.stringify({ error: "Template ID is required. Use ?id=your-template-id" }),
+        JSON.stringify({ error: 'Missing shortcode parameter' }), 
         {
           status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log(`Fetching template with shortcode: ${shortcode}`);
 
-    // Fetch the template
+    // Query the email_templates table
     const { data, error } = await supabase
-      .from("email_templates")
-      .select("*")
-      .eq("id", templateId)
+      .from('email_templates')
+      .select('id, name, html, json_template, api_shortcode, created_at, updated_at')
+      .eq('api_shortcode', shortcode)
       .single();
 
     if (error) {
-      console.error("Database error:", error);
+      console.error('Database error:', error);
+      
+      if (error.code === 'PGRST116') {
+        return new Response(
+          JSON.stringify({ error: 'Template not found' }), 
+          {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ error: "Template not found" }),
+        JSON.stringify({ error: 'Failed to fetch template' }), 
         {
-          status: 404,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
 
-    console.log(`Template fetched successfully: ${data.name}`);
+    console.log(`Successfully fetched template: ${data.name}`);
 
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: true,
-        template: {
-          id: data.id,
-          name: data.name,
-          html: data.html,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-        },
-      }),
+        template: data 
+      }), 
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
+
   } catch (error) {
-    console.error("Error in get-template function:", error);
+    console.error('Unexpected error in get-template function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: 'Internal server error', message: errorMessage }), 
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }

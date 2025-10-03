@@ -11,6 +11,7 @@ interface Template {
   name: string;
   html: string;
   json_template: EmailTemplate;
+  api_shortcode: string;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +113,11 @@ export const TemplateList = ({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm truncate">{template.name}</h3>
+                    {template.api_shortcode && (
+                      <p className="text-xs text-primary/70 font-mono mt-0.5">
+                        {template.api_shortcode}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(template.updated_at), {
                         addSuffix: true,

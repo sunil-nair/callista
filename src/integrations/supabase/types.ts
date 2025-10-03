@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       email_templates: {
         Row: {
+          api_shortcode: string
           created_at: string
           html: string
           id: string
@@ -24,6 +25,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_shortcode?: string
           created_at?: string
           html: string
           id?: string
@@ -32,6 +34,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_shortcode?: string
           created_at?: string
           html?: string
           id?: string

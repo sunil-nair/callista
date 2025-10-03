@@ -12,6 +12,7 @@ interface Template {
   name: string;
   html: string;
   json_template: EmailTemplate;
+  api_shortcode: string;
   created_at: string;
   updated_at: string;
 }
@@ -50,13 +51,13 @@ const Index = () => {
     }
   };
 
-  const handleSave = async (name: string, template: EmailTemplate, html: string) => {
+  const handleSave = async (name: string, apiShortcode: string, template: EmailTemplate, html: string) => {
     try {
       if (selectedTemplate) {
         // Update existing template
         const { error } = await supabase
           .from("email_templates")
-          .update({ name, html, json_template: template as any })
+          .update({ name, api_shortcode: apiShortcode, html, json_template: template as any })
           .eq("id", selectedTemplate.id);
 
         if (error) throw error;
@@ -65,7 +66,7 @@ const Index = () => {
         // Create new template
         const { error } = await supabase
           .from("email_templates")
-          .insert([{ name, html, json_template: template as any }]);
+          .insert([{ name, api_shortcode: apiShortcode, html, json_template: template as any }]);
 
         if (error) throw error;
         toast.success("Template created successfully!");
@@ -146,6 +147,7 @@ const Index = () => {
           <VisualEditor
             key={selectedTemplate?.id || "new"}
             initialName={selectedTemplate?.name || ""}
+            initialApiShortcode={selectedTemplate?.api_shortcode || ""}
             initialTemplate={selectedTemplate?.json_template}
             onSave={handleSave}
             onPreview={(name, html, template) => {
@@ -154,6 +156,7 @@ const Index = () => {
                 name, 
                 html,
                 json_template: template,
+                api_shortcode: selectedTemplate?.api_shortcode || "",
                 created_at: selectedTemplate?.created_at || new Date().toISOString(),
                 updated_at: selectedTemplate?.updated_at || new Date().toISOString()
               });

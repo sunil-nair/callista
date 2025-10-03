@@ -16,8 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface VisualEditorProps {
   initialName?: string;
+  initialApiShortcode?: string;
   initialTemplate?: EmailTemplate;
-  onSave: (name: string, template: EmailTemplate, html: string) => void;
+  onSave: (name: string, apiShortcode: string, template: EmailTemplate, html: string) => void;
   onPreview?: (name: string, html: string, template: EmailTemplate) => void;
 }
 
@@ -28,11 +29,13 @@ const defaultTemplate: EmailTemplate = {
 
 export const VisualEditor = ({
   initialName = "",
+  initialApiShortcode = "",
   initialTemplate = defaultTemplate,
   onSave,
   onPreview,
 }: VisualEditorProps) => {
   const [templateName, setTemplateName] = useState(initialName);
+  const [apiShortcode, setApiShortcode] = useState(initialApiShortcode);
   const [template, setTemplate] = useState<EmailTemplate>(initialTemplate);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
@@ -234,8 +237,13 @@ export const VisualEditor = ({
       return;
     }
 
+    if (!apiShortcode.trim()) {
+      toast.error("Please enter an API shortcode");
+      return;
+    }
+
     const html = generateHTML();
-    onSave(templateName, template, html);
+    onSave(templateName, apiShortcode, template, html);
   };
 
   const handlePreview = () => {
@@ -457,6 +465,12 @@ export const VisualEditor = ({
             placeholder="Template name..."
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
+            className="max-w-xs h-9"
+          />
+          <Input
+            placeholder="API shortcode..."
+            value={apiShortcode}
+            onChange={(e) => setApiShortcode(e.target.value)}
             className="max-w-xs h-9"
           />
           
