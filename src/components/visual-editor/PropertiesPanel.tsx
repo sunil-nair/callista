@@ -68,7 +68,7 @@ export const PropertiesPanel = ({
   };
 
   return (
-    <div className="w-80 border-l bg-card p-4 overflow-y-auto">
+    <div className="w-80 border-l bg-card p-4 overflow-y-auto h-full">
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">Properties</h3>
