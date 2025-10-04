@@ -6,7 +6,20 @@
 -- ============================================
 
 -- Drop existing objects (if any)
+-- Drop triggers first
+DROP TRIGGER IF EXISTS update_email_templates_updated_at ON public.email_templates;
+
+-- Drop functions
+DROP FUNCTION IF EXISTS public.update_email_template_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_updated_at() CASCADE;
+DROP FUNCTION IF EXISTS public.has_role(uuid, app_role) CASCADE;
+
+-- Drop tables
 DROP TABLE IF EXISTS public.email_templates CASCADE;
+DROP TABLE IF EXISTS public.user_roles CASCADE;
+
+-- Drop types
+DROP TYPE IF EXISTS public.app_role CASCADE;
 
 -- Create email_templates table
 CREATE TABLE public.email_templates (
