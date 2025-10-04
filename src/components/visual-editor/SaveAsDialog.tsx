@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,21 @@ export const SaveAsDialog = ({
   currentShortcode,
   onSave,
 }: SaveAsDialogProps) => {
+  const generateUniqueShortcode = () => {
+    const timestamp = Date.now();
+    return `${currentShortcode}-${timestamp}`;
+  };
+
   const [name, setName] = useState(`${currentName} (Copy)`);
-  const [shortcode, setShortcode] = useState(`${currentShortcode}-copy`);
+  const [shortcode, setShortcode] = useState(generateUniqueShortcode());
+
+  // Update values when dialog opens
+  useEffect(() => {
+    if (open) {
+      setName(`${currentName} (Copy)`);
+      setShortcode(generateUniqueShortcode());
+    }
+  }, [open, currentName, currentShortcode]);
 
   const handleSave = () => {
     if (name.trim() && shortcode.trim()) {
