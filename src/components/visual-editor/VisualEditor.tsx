@@ -1,20 +1,25 @@
 import { useState, useRef, useEffect } from "react";
-import { Rnd } from "react-rnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, Save, Copy, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3 } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
-import { PlaceholderText } from "./PlaceholderText";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
-import { ElementContextMenu } from "./ElementContextMenu";
 import { AIDesignDialog } from "../AIDesignDialog";
 import { SaveAsDialog } from "./SaveAsDialog";
-import { TemplateElement, EmailTemplate } from "@/types/template";
+import { RenderableElement } from "./elements/RenderableElement";
+import { useElementOperations } from "./hooks/useElementOperations";
+import { 
+  createDefaultTextElement, 
+  createDefaultImageElement, 
+  createDefaultShapeElement, 
+  createDefaultButtonElement,
+  normalizeAIElement 
+} from "./utils/elementDefaults";
+import { EmailTemplate } from "@/types/template";
 import { HTMLParser } from "@/utils/htmlParser";
 import { HTMLGenerator } from "@/utils/htmlGenerator";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
 
 interface VisualEditorProps {
   initialName?: string;
@@ -41,15 +46,28 @@ export const VisualEditor = ({
   const [templateName, setTemplateName] = useState(initialName);
   const [apiShortcode, setApiShortcode] = useState(initialApiShortcode);
   const [template, setTemplate] = useState<EmailTemplate>(initialTemplate);
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [canvasSize, setCanvasSize] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
   const [showComponentPanel, setShowComponentPanel] = useState(true);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
-  const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Use custom hook for element operations
+  const {
+    selectedElementId,
+    setSelectedElementId,
+    editingTextId,
+    setEditingTextId,
+    handleUpdateElement,
+    handleDeleteElement,
+    handleBringForward,
+    handleSendBackward,
+    handleBringToFront,
+    handleSendToBack,
+    handleDuplicateElement,
+  } = useElementOperations(template, setTemplate);
 
   const canvasSizes = {
     mobile: { width: 375, height: 667 },
@@ -59,7 +77,7 @@ export const VisualEditor = ({
 
   const selectedElement = template.elements.find((el) => el.id === selectedElementId) || null;
 
-  // Detect changes by comparing current state with initial state
+  // Detect changes
   useEffect(() => {
     const nameChanged = templateName !== initialName;
     const shortcodeChanged = apiShortcode !== initialApiShortcode;
@@ -69,71 +87,23 @@ export const VisualEditor = ({
   }, [templateName, apiShortcode, template, initialName, initialApiShortcode, initialTemplate]);
 
   const handleAddElement = (type: 'text' | 'image' | 'shape' | 'button') => {
-    let newElement: TemplateElement;
-
-    if (type === 'text') {
-      newElement = {
-        id: uuidv4(),
-        type: 'text',
-        position: { x: 50, y: 50 },
-        size: { width: 200, height: 50 },
-        zIndex: template.elements.length,
-        content: 'Enter text here',
-        style: {
-          fontSize: 16,
-          fontWeight: '400',
-          color: '#000000',
-          textAlign: 'left',
-          fontFamily: 'Inter, sans-serif',
-        },
-      };
-    } else if (type === 'image') {
-      newElement = {
-        id: uuidv4(),
-        type: 'image',
-        position: { x: 50, y: 50 },
-        size: { width: 200, height: 100 },
-        zIndex: template.elements.length,
-        src: 'https://via.placeholder.com/200x100',
-        alt: 'Image',
-        style: {
-          objectFit: 'contain',
-          borderRadius: 0,
-        },
-      };
-    } else if (type === 'shape') {
-      newElement = {
-        id: uuidv4(),
-        type: 'shape',
-        position: { x: 50, y: 50 },
-        size: { width: 200, height: 100 },
-        zIndex: template.elements.length,
-        shapeType: 'rectangle',
-        style: {
-          backgroundColor: '#e5e7eb',
-          borderColor: '#000000',
-          borderWidth: 2,
-          borderRadius: 0,
-        },
-      };
-    } else {
-      newElement = {
-        id: uuidv4(),
-        type: 'button',
-        position: { x: 50, y: 50 },
-        size: { width: 200, height: 100 },
-        zIndex: template.elements.length,
-        text: 'Click me',
-        href: 'https://example.com',
-        style: {
-          backgroundColor: '#3b82f6',
-          color: '#ffffff',
-          fontSize: 16,
-          borderRadius: 8,
-          paddingX: 24,
-          paddingY: 12,
-        },
-      };
+    const position = { x: 50, y: 50 };
+    const zIndex = template.elements.length;
+    
+    let newElement;
+    switch (type) {
+      case 'text':
+        newElement = createDefaultTextElement(position, zIndex);
+        break;
+      case 'image':
+        newElement = createDefaultImageElement(position, zIndex);
+        break;
+      case 'shape':
+        newElement = createDefaultShapeElement(position, zIndex);
+        break;
+      case 'button':
+        newElement = createDefaultButtonElement(position, zIndex);
+        break;
     }
 
     setTemplate((prev) => ({
@@ -142,104 +112,6 @@ export const VisualEditor = ({
     }));
     setSelectedElementId(newElement.id);
     toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} element added`);
-  };
-
-  const handleUpdateElement = (id: string, updates: Partial<TemplateElement>) => {
-    setTemplate((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) => {
-        if (el.id === id) {
-          return { ...el, ...updates } as TemplateElement;
-        }
-        return el;
-      }),
-    }));
-  };
-
-  const handleDeleteElement = (id: string) => {
-    setTemplate((prev) => ({
-      ...prev,
-      elements: prev.elements.filter((el) => el.id !== id),
-    }));
-    setSelectedElementId(null);
-    toast.success("Element deleted");
-  };
-
-  const handleBringForward = (id: string) => {
-    setTemplate((prev) => {
-      const element = prev.elements.find((el) => el.id === id);
-      if (!element) return prev;
-
-      const maxZIndex = Math.max(...prev.elements.map((el) => el.zIndex));
-      if (element.zIndex === maxZIndex) return prev;
-
-      return {
-        ...prev,
-        elements: prev.elements.map((el) =>
-          el.id === id ? { ...el, zIndex: el.zIndex + 1 } : el
-        ),
-      };
-    });
-  };
-
-  const handleSendBackward = (id: string) => {
-    setTemplate((prev) => {
-      const element = prev.elements.find((el) => el.id === id);
-      if (!element || element.zIndex === 0) return prev;
-
-      return {
-        ...prev,
-        elements: prev.elements.map((el) =>
-          el.id === id ? { ...el, zIndex: el.zIndex - 1 } : el
-        ),
-      };
-    });
-  };
-
-  const handleBringToFront = (id: string) => {
-    setTemplate((prev) => {
-      const maxZIndex = Math.max(...prev.elements.map((el) => el.zIndex), 0);
-      return {
-        ...prev,
-        elements: prev.elements.map((el) =>
-          el.id === id ? { ...el, zIndex: maxZIndex + 1 } : el
-        ),
-      };
-    });
-  };
-
-  const handleSendToBack = (id: string) => {
-    setTemplate((prev) => {
-      return {
-        ...prev,
-        elements: prev.elements.map((el) =>
-          el.id === id ? { ...el, zIndex: 0 } : el.id !== id && el.zIndex > 0 ? { ...el, zIndex: el.zIndex + 1 } : el
-        ),
-      };
-    });
-  };
-
-  const handleDuplicateElement = (id: string) => {
-    setTemplate((prev) => {
-      const element = prev.elements.find((el) => el.id === id);
-      if (!element) return prev;
-
-      const newElement = {
-        ...element,
-        id: uuidv4(),
-        position: {
-          x: element.position.x + 20,
-          y: element.position.y + 20,
-        },
-        zIndex: Math.max(...prev.elements.map((el) => el.zIndex), 0) + 1,
-      } as TemplateElement;
-
-      return {
-        ...prev,
-        elements: [...prev.elements, newElement],
-      };
-    });
-    toast.success("Element duplicated");
   };
 
   const generateHTML = (useTableLayout: boolean = false): string => {
@@ -317,57 +189,8 @@ export const VisualEditor = ({
   };
 
   const handleAIDesignGenerated = (template: EmailTemplate) => {
-    // Ensure all elements have proper visible defaults
-    const normalizedElements = template.elements.map(element => {
-      if (element.type === 'text') {
-        return {
-          ...element,
-          style: {
-            ...element.style,
-            color: element.style.color || '#000000',
-            fontSize: element.style.fontSize || 16,
-            fontWeight: element.style.fontWeight || '400',
-            textAlign: element.style.textAlign || 'left',
-            fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-          },
-        };
-      } else if (element.type === 'shape') {
-        return {
-          ...element,
-          style: {
-            ...element.style,
-            backgroundColor: element.style.backgroundColor || '#e0e0e0',
-            borderColor: element.style.borderColor || '#000000',
-            borderWidth: element.style.borderWidth ?? 0,
-            borderRadius: element.style.borderRadius ?? 0,
-          },
-        };
-      } else if (element.type === 'button') {
-        return {
-          ...element,
-          style: {
-            ...element.style,
-            backgroundColor: element.style.backgroundColor || '#0066cc',
-            color: element.style.color || '#ffffff',
-            fontSize: element.style.fontSize || 16,
-            borderRadius: element.style.borderRadius ?? 4,
-            paddingX: element.style.paddingX ?? 20,
-            paddingY: element.style.paddingY ?? 10,
-          },
-        };
-      } else if (element.type === 'image') {
-        return {
-          ...element,
-          style: {
-            ...element.style,
-            objectFit: element.style.objectFit || 'contain',
-            objectPosition: element.style.objectPosition || 'center',
-            borderRadius: element.style.borderRadius ?? 0,
-          },
-        };
-      }
-      return element;
-    });
+    // Normalize all elements to ensure proper visibility
+    const normalizedElements = template.elements.map(normalizeAIElement);
 
     setTemplate({
       ...template,
@@ -376,150 +199,32 @@ export const VisualEditor = ({
     toast.success("AI design loaded successfully!");
   };
 
-  const renderElement = (element: TemplateElement) => {
+  const renderElement = (element: any) => {
     const isSelected = element.id === selectedElementId;
     const isEditing = element.id === editingTextId;
     
     return (
-      <ElementContextMenu
+      <RenderableElement
         key={element.id}
+        element={element}
+        isSelected={isSelected}
+        isEditing={isEditing}
+        onSelect={() => setSelectedElementId(element.id)}
+        onDoubleClick={() => {
+          if (element.type === 'text') {
+            setEditingTextId(element.id);
+            setSelectedElementId(element.id);
+          }
+        }}
+        onUpdate={handleUpdateElement}
+        onStopEditing={() => setEditingTextId(null)}
         onBringToFront={() => handleBringToFront(element.id)}
         onBringForward={() => handleBringForward(element.id)}
         onSendBackward={() => handleSendBackward(element.id)}
         onSendToBack={() => handleSendToBack(element.id)}
         onDuplicate={() => handleDuplicateElement(element.id)}
         onDelete={() => handleDeleteElement(element.id)}
-      >
-        <Rnd
-          position={element.position}
-          size={element.size}
-          onDragStop={(e, d) => {
-            if (!isEditing) {
-              handleUpdateElement(element.id, {
-                position: { x: d.x, y: d.y },
-              });
-            }
-          }}
-          onResizeStop={(e, direction, ref, delta, position) => {
-            if (!isEditing) {
-              handleUpdateElement(element.id, {
-                size: {
-                  width: parseInt(ref.style.width),
-                  height: parseInt(ref.style.height),
-                },
-                position,
-              });
-            }
-          }}
-          bounds="parent"
-          style={{ zIndex: element.zIndex }}
-          className={`${!isEditing ? 'cursor-move' : 'cursor-text'} ${isSelected ? 'ring-2 ring-primary' : ''}`}
-          onClick={() => setSelectedElementId(element.id)}
-          disableDragging={isEditing}
-          enableResizing={!isEditing}
-        >
-          <div 
-            className="w-full h-full"
-            onDoubleClick={() => {
-              if (element.type === 'text') {
-                setEditingTextId(element.id);
-                setSelectedElementId(element.id);
-              }
-            }}
-          >
-            {element.type === 'text' && (
-              <>
-                {isEditing ? (
-                  <textarea
-                    autoFocus
-                    value={element.content}
-                    onChange={(e) => handleUpdateElement(element.id, { content: e.target.value } as any)}
-                    onBlur={() => setEditingTextId(null)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        setEditingTextId(null);
-                      }
-                    }}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      fontSize: element.style.fontSize,
-                      fontWeight: element.style.fontWeight,
-                      color: element.style.color,
-                      textAlign: element.style.textAlign,
-                      fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-                      border: 'none',
-                      outline: 'none',
-                      background: 'transparent',
-                      resize: 'none',
-                      overflow: 'hidden',
-                    }}
-                  />
-                ) : (
-                  <PlaceholderText
-                    content={element.content}
-                    style={{
-                      fontSize: element.style.fontSize,
-                      fontWeight: element.style.fontWeight,
-                      color: element.style.color,
-                      textAlign: element.style.textAlign,
-                      fontFamily: element.style.fontFamily || 'Inter, sans-serif',
-                      width: '100%',
-                      height: '100%',
-                      overflow: 'hidden',
-                    }}
-                  />
-                )}
-              </>
-            )}
-            
-            {element.type === 'image' && (
-              <img
-                src={element.src}
-                alt={element.alt}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: element.style.objectFit,
-                  objectPosition: element.style.objectPosition || 'center',
-                  borderRadius: element.style.borderRadius,
-                }}
-              />
-            )}
-            
-            {element.type === 'shape' && (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: element.style.backgroundColor,
-                  border: `${element.style.borderWidth}px solid ${element.style.borderColor}`,
-                  borderRadius: element.shapeType === 'circle' ? '50%' : element.style.borderRadius,
-                }}
-              />
-            )}
-            
-            {element.type === 'button' && (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: element.style.backgroundColor,
-                  color: element.style.color,
-                  fontSize: element.style.fontSize,
-                  borderRadius: element.style.borderRadius,
-                  padding: `${element.style.paddingY}px ${element.style.paddingX}px`,
-                }}
-              >
-                {element.text}
-              </div>
-            )}
-          </div>
-        </Rnd>
-      </ElementContextMenu>
+      />
     );
   };
 
