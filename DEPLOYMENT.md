@@ -26,8 +26,8 @@ SSH into your VPS and create a directory for the application:
 
 ```bash
 ssh user@your-vps-ip
-mkdir -p /opt/callista
-cd /opt/callista
+mkdir -p /home/apps/callista
+cd /home/apps/callista
 ```
 
 ### 1.2 Transfer Project Files
@@ -42,13 +42,13 @@ git clone https://github.com/yourusername/callista.git .
 **Option B: SCP from local machine**
 ```bash
 # Run this from your local machine
-scp -r /path/to/callista/* user@your-vps-ip:/opt/callista/
+scp -r /path/to/callista/* user@your-vps-ip:/home/apps/callista/
 ```
 
 **Option C: Rsync**
 ```bash
 # Run this from your local machine
-rsync -avz /path/to/callista/ user@your-vps-ip:/opt/callista/
+rsync -avz /path/to/callista/ user@your-vps-ip:/home/apps/callista/
 ```
 
 ---
@@ -72,7 +72,7 @@ The project includes migration files in `supabase/migrations/` that create the d
 **Option B: Using psql (Batch Apply)**
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 
 # Apply all migrations in order
 for migration in supabase/migrations/*.sql; do
@@ -127,11 +127,11 @@ Copy the edge functions from your Callista project to your Supabase functions di
 cd /path/to/your/supabase/installation
 
 # Copy functions
-cp -r /opt/callista/supabase/functions/get-template ./supabase/functions/
-cp -r /opt/callista/supabase/functions/design-with-ai ./supabase/functions/
+cp -r /home/apps/callista/supabase/functions/get-template ./supabase/functions/
+cp -r /home/apps/callista/supabase/functions/design-with-ai ./supabase/functions/
 
 # Copy config
-cp /opt/callista/supabase/config.toml ./supabase/config.toml
+cp /home/apps/callista/supabase/config.toml ./supabase/config.toml
 ```
 
 ### 3.2 Set Supabase Secrets
@@ -195,7 +195,7 @@ You need three values from your self-hosted Supabase:
 Copy the production template and edit it:
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 cp .env.production .env
 nano .env
 ```
@@ -220,7 +220,7 @@ VITE_SUPABASE_PROJECT_ID=your_actual_project_id_here
 Build the Docker image (this will take a few minutes):
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 docker-compose build
 ```
 
@@ -457,7 +457,7 @@ sudo ufw status
 
 ```bash
 # Docker container logs
-cd /opt/callista
+cd /home/apps/callista
 docker-compose logs -f
 
 # Caddy access logs
@@ -470,14 +470,14 @@ sudo journalctl -u caddy -f
 ### Restart Application
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 docker-compose restart
 ```
 
 ### Stop Application
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 docker-compose down
 ```
 
@@ -486,7 +486,7 @@ docker-compose down
 When you have new code changes:
 
 ```bash
-cd /opt/callista
+cd /home/apps/callista
 
 # Pull latest changes (if using git)
 git pull
