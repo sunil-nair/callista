@@ -80,6 +80,22 @@ const Index = () => {
     }
   };
 
+  const handleSaveAs = async (name: string, apiShortcode: string, template: EmailTemplate, html: string) => {
+    try {
+      // Always create a new template (never update)
+      const { error } = await emailTemplatesTable()
+        .insert([{ name, api_shortcode: apiShortcode, html, json_template: template }]);
+
+      if (error) throw error;
+      toast.success("Template saved as new template!");
+
+      await loadTemplates();
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await emailTemplatesTable()
@@ -149,6 +165,7 @@ const Index = () => {
             initialApiShortcode={selectedTemplate?.api_shortcode || ""}
             initialTemplate={selectedTemplate?.json_template}
             onSave={handleSave}
+            onSaveAs={handleSaveAs}
             onPreview={(name, html, template) => {
               setPreviewTemplate({ 
                 id: selectedTemplate?.id || "preview", 

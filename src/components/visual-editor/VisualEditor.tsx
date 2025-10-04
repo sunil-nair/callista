@@ -2,13 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { Rnd } from "react-rnd";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Save, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3 } from "lucide-react";
+import { Eye, Save, Copy, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3 } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { PlaceholderText } from "./PlaceholderText";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
 import { ElementContextMenu } from "./ElementContextMenu";
 import { AIDesignDialog } from "../AIDesignDialog";
+import { SaveAsDialog } from "./SaveAsDialog";
 import { TemplateElement, EmailTemplate } from "@/types/template";
 import { HTMLParser } from "@/utils/htmlParser";
 import { HTMLGenerator } from "@/utils/htmlGenerator";
@@ -20,6 +21,7 @@ interface VisualEditorProps {
   initialApiShortcode?: string;
   initialTemplate?: EmailTemplate;
   onSave: (name: string, apiShortcode: string, template: EmailTemplate, html: string) => void;
+  onSaveAs?: (name: string, apiShortcode: string, template: EmailTemplate, html: string) => void;
   onPreview?: (name: string, html: string, template: EmailTemplate) => void;
 }
 
@@ -33,6 +35,7 @@ export const VisualEditor = ({
   initialApiShortcode = "",
   initialTemplate = defaultTemplate,
   onSave,
+  onSaveAs,
   onPreview,
 }: VisualEditorProps) => {
   const [templateName, setTemplateName] = useState(initialName);
@@ -45,6 +48,7 @@ export const VisualEditor = ({
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const canvasSizes = {
@@ -256,6 +260,24 @@ export const VisualEditor = ({
     const html = generateHTML();
     onSave(templateName, apiShortcode, template, html);
     setHasChanges(false); // Reset after save
+  };
+
+  const handleSaveAs = (newName: string, newShortcode: string) => {
+    if (!newName.trim()) {
+      toast.error("Please enter a template name");
+      return;
+    }
+
+    if (!newShortcode.trim()) {
+      toast.error("Please enter an API shortcode");
+      return;
+    }
+
+    const html = generateHTML();
+    if (onSaveAs) {
+      onSaveAs(newName, newShortcode, template, html);
+      setHasChanges(false);
+    }
   };
 
   const handlePreview = () => {
@@ -505,6 +527,12 @@ export const VisualEditor = ({
                   Preview
                 </Button>
               )}
+              {onSaveAs && (
+                <Button variant="outline" size="sm" onClick={() => setShowSaveAsDialog(true)} className="h-8">
+                  <Copy className="h-4 w-4 mr-1.5" />
+                  Save as
+                </Button>
+              )}
               <Button size="sm" onClick={handleSave} className="h-8" disabled={!hasChanges}>
                 <Save className="h-4 w-4 mr-1.5" />
                 Save
@@ -660,6 +688,15 @@ export const VisualEditor = ({
           </Button>
         </div>
       )}
+      
+      {/* Dialogs */}
+      <SaveAsDialog
+        open={showSaveAsDialog}
+        onOpenChange={setShowSaveAsDialog}
+        currentName={templateName || "Untitled"}
+        currentShortcode={apiShortcode || "untitled"}
+        onSave={handleSaveAs}
+      />
     </div>
   );
 };
