@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TemplateElement } from "@/types/template";
-import { Trash2, ArrowUp, ArrowDown, AtSign } from "lucide-react";
+import { Trash2, ArrowUp, ArrowDown, AtSign, Type, Image as ImageIcon, Square, MousePointer } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { availableFonts } from "@/lib/fonts";
 import { toast } from "sonner";
 
@@ -67,9 +68,35 @@ export const PropertiesPanel = ({
     }
   };
 
+  const getElementIcon = () => {
+    switch (selectedElement.type) {
+      case 'text': return <Type className="h-3.5 w-3.5" />;
+      case 'image': return <ImageIcon className="h-3.5 w-3.5" />;
+      case 'shape': return <Square className="h-3.5 w-3.5" />;
+      case 'button': return <MousePointer className="h-3.5 w-3.5" />;
+    }
+  };
+
+  const getElementTypeLabel = () => {
+    switch (selectedElement.type) {
+      case 'text': return 'Text';
+      case 'image': return 'Image';
+      case 'shape': return selectedElement.shapeType === 'circle' ? 'Circle' : 'Rectangle';
+      case 'button': return 'Button';
+    }
+  };
+
   return (
     <div className="w-80 border-l bg-card p-4 overflow-y-auto h-full">
       <div className="space-y-4">
+        {/* Element Type Badge */}
+        <div className="flex items-center justify-between pb-3 border-b">
+          <Badge variant="secondary" className="gap-1.5">
+            {getElementIcon()}
+            <span className="font-medium">{getElementTypeLabel()}</span>
+          </Badge>
+        </div>
+        
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">Properties</h3>
           <div className="flex gap-1">

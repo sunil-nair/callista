@@ -317,7 +317,63 @@ export const VisualEditor = ({
   };
 
   const handleAIDesignGenerated = (template: EmailTemplate) => {
-    setTemplate(template);
+    // Ensure all elements have proper visible defaults
+    const normalizedElements = template.elements.map(element => {
+      if (element.type === 'text') {
+        return {
+          ...element,
+          style: {
+            ...element.style,
+            color: element.style.color || '#000000',
+            fontSize: element.style.fontSize || 16,
+            fontWeight: element.style.fontWeight || '400',
+            textAlign: element.style.textAlign || 'left',
+            fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+          },
+        };
+      } else if (element.type === 'shape') {
+        return {
+          ...element,
+          style: {
+            ...element.style,
+            backgroundColor: element.style.backgroundColor || '#e0e0e0',
+            borderColor: element.style.borderColor || '#000000',
+            borderWidth: element.style.borderWidth ?? 0,
+            borderRadius: element.style.borderRadius ?? 0,
+          },
+        };
+      } else if (element.type === 'button') {
+        return {
+          ...element,
+          style: {
+            ...element.style,
+            backgroundColor: element.style.backgroundColor || '#0066cc',
+            color: element.style.color || '#ffffff',
+            fontSize: element.style.fontSize || 16,
+            borderRadius: element.style.borderRadius ?? 4,
+            paddingX: element.style.paddingX ?? 20,
+            paddingY: element.style.paddingY ?? 10,
+          },
+        };
+      } else if (element.type === 'image') {
+        return {
+          ...element,
+          style: {
+            ...element.style,
+            objectFit: element.style.objectFit || 'contain',
+            objectPosition: element.style.objectPosition || 'center',
+            borderRadius: element.style.borderRadius ?? 0,
+          },
+        };
+      }
+      return element;
+    });
+
+    setTemplate({
+      ...template,
+      elements: normalizedElements,
+    });
+    toast.success("AI design loaded successfully!");
   };
 
   const renderElement = (element: TemplateElement) => {
