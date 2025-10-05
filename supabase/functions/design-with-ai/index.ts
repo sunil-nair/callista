@@ -91,6 +91,9 @@ Guidelines:
     // Clean up the response
     generatedText = generatedText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     
+    // Fix common JSON issues from AI responses
+    generatedText = generatedText.replace(/:\s*auto\s*([,}])/g, ': 100$1'); // Replace unquoted 'auto' with numeric value
+    
     let design;
     try {
       design = JSON.parse(generatedText);
