@@ -70,10 +70,27 @@ export const VisualEditor = ({
   } = useElementOperations(template, setTemplate);
 
   const canvasSizes = {
-    mobile: { width: 375, height: 667 },
-    tablet: { width: 768, height: 1024 },
-    desktop: { width: 1200, height: 800 },
+    mobile: { width: 375, height: 800 },  // Increased min height
+    tablet: { width: 768, height: 1200 },
+    desktop: { width: 1200, height: 1000 },
   };
+
+  // Calculate dynamic canvas height based on content
+  const calculateCanvasHeight = () => {
+    const minHeight = canvasSizes[canvasSize].height;
+    if (template.elements.length === 0) return minHeight;
+    
+    // Find the lowest element bottom edge
+    const maxBottom = Math.max(
+      ...template.elements.map(el => el.position.y + el.size.height),
+      0
+    );
+    
+    // Add padding at the bottom (100px) and ensure minimum height
+    return Math.max(minHeight, maxBottom + 100);
+  };
+
+  const dynamicCanvasHeight = calculateCanvasHeight();
 
   const selectedElement = template.elements.find((el) => el.id === selectedElementId) || null;
 
@@ -363,8 +380,8 @@ export const VisualEditor = ({
           <div className="min-h-full flex items-center justify-center p-8">
             <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
               {/* Ruler guides */}
-              <div className="absolute -left-8 top-0 bottom-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l">
-                {Array.from({ length: Math.floor(template.canvasSize.height / 50) }).map((_, i) => (
+              <div className="absolute -left-8 top-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l" style={{ height: dynamicCanvasHeight }}>
+                {Array.from({ length: Math.floor(dynamicCanvasHeight / 50) }).map((_, i) => (
                   <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
                     {i * 50}
                   </div>
@@ -385,9 +402,8 @@ export const VisualEditor = ({
                   left: 20,
                   top: 20,
                   right: 20,
-                  bottom: 20,
                   width: template.canvasSize.width - 40,
-                  height: template.canvasSize.height - 40,
+                  height: dynamicCanvasHeight - 40,
                 }}
               >
                 <span className="absolute -top-6 left-0 text-xs text-primary/60 font-medium">Safe Zone (20px margin)</span>
@@ -398,7 +414,7 @@ export const VisualEditor = ({
                 className={`bg-white shadow-2xl mx-auto relative rounded-lg overflow-hidden ${showGrid ? 'bg-grid' : ''}`}
                 style={{
                   width: template.canvasSize.width,
-                  height: template.canvasSize.height,
+                  minHeight: dynamicCanvasHeight,
                   backgroundImage: showGrid 
                     ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
                     : 'none',
