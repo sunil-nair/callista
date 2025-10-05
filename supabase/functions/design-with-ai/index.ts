@@ -14,194 +14,126 @@ serve(async (req) => {
   try {
     const { prompt, canvasSize } = await req.json();
     
-    // Support both Lovable AI and OpenAI
-    const provider = Deno.env.get('LLM_PROVIDER') || 'lovable'; // 'lovable' or 'openai'
-    const apiKey = provider === 'openai' 
-      ? Deno.env.get('OPENAI_API_KEY')
-      : Deno.env.get('LOVABLE_API_KEY');
-    const model = Deno.env.get('LLM_MODEL') || 
-      (provider === 'openai' ? 'gpt-4o-mini' : 'google/gemini-2.5-flash');
-    
-    if (!apiKey) {
-      throw new Error(`${provider === 'openai' ? 'OPENAI_API_KEY' : 'LOVABLE_API_KEY'} not configured`);
+    if (!prompt) {
+      throw new Error('Prompt is required');
     }
-    
-    const apiEndpoint = provider === 'openai'
-      ? 'https://api.openai.com/v1/chat/completions'
-      : 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
-    const systemPrompt = `You are an email template design assistant. Generate a JSON template for an email design based on the user's request.
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not configured');
+    }
 
-CANVAS SIZE: ${canvasSize.width}x${canvasSize.height}px (${canvasSize.width <= 375 ? 'mobile' : canvasSize.width <= 768 ? 'tablet' : 'desktop'})
+    const systemPrompt = `You are an email template design expert. Generate a JSON structure for visual elements based on the user's prompt.
 
-AVAILABLE COMPONENTS:
-1. TEXT: Display text content
-   - Properties: content (string), fontSize (number), fontWeight (string), color (hex), textAlign (left/center/right), fontFamily (optional)
-   
-2. IMAGE: Display images
-   - Properties: src (URL string), alt (string), objectFit (contain/cover/fill), objectPosition (center/top/bottom/left/right/top left/top right/bottom left/bottom right), borderRadius (number)
-   
-3. SHAPE: Rectangles or circles for backgrounds/decoration
-   - Properties: shapeType (rectangle/circle), backgroundColor (hex), borderColor (hex), borderWidth (number), borderRadius (number)
-   
-4. BUTTON: Clickable buttons with links
-   - Properties: text (string), href (URL), backgroundColor (hex), color (hex), fontSize (number), borderRadius (number), paddingX (number), paddingY (number)
+Canvas size: ${canvasSize.width}x${canvasSize.height}px
 
-RULES:
-- Position elements using x, y coordinates (in pixels from top-left)
-- Size elements using width, height (in pixels)
-- All elements have a zIndex (higher = on top)
-- Colors must be hex format (#RRGGBB)
-- Keep designs within canvas bounds
-- Use appropriate spacing and alignment
-- Consider mobile-first design for narrow canvases
-
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON matching this schema:
 {
   "elements": [
     {
-      "id": "unique-id",
-      "type": "text|image|shape|button",
-      "position": { "x": 0, "y": 0 },
-      "size": { "width": 100, "height": 50 },
-      "zIndex": 1,
-      ... type-specific properties
+      "type": "text" | "image" | "shape" | "button",
+      "content": "text content (for text/button only)",
+      "position": { "x": number, "y": number },
+      "size": { "width": number, "height": number },
+      "style": {
+        "fontSize": number,
+        "fontWeight": "400" | "500" | "600" | "700",
+        "color": "#hexcolor",
+        "textAlign": "left" | "center" | "right",
+        "fontFamily": "Inter, sans-serif",
+        "backgroundColor": "#hexcolor (shapes/buttons)",
+        "shapeType": "rectangle" | "circle" (shapes only),
+        "borderRadius": number (shapes/buttons),
+        "src": "https://placeholder-url (images only)"
+      }
     }
   ]
-}`;
+}
 
-    console.log('Calling LLM with provider:', provider, 'model:', model);
-    
-    const response = await fetch(apiEndpoint, {
+Guidelines:
+- Position elements within canvas bounds
+- Use readable font sizes (14-24px for body, 28-48px for headers)
+- Ensure good color contrast
+- Text elements default width: 200-400px, height: auto
+- Images: reasonable sizes (200x200 - 600x400)
+- Buttons: 120-200px wide, 40-50px tall
+- Use professional color schemes`;
+
+    console.log('Calling OpenAI with prompt:', prompt);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model,
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7
+        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('LLM API error:', response.status, error);
-      throw new Error(`LLM API error: ${response.status} - ${error}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    let generatedContent = data.choices?.[0]?.message?.content ?? '';
+    console.log('OpenAI response:', JSON.stringify(data, null, 2));
+
+    let generatedText = data.choices[0].message.content;
     
-    console.log('Generated design:', generatedContent);
+    // Clean up the response
+    generatedText = generatedText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     
-    // Normalize to raw JSON (strip code fences and extract JSON block if needed)
-    const sanitizeToJson = (text: string) => {
-      try {
-        return JSON.parse(text);
-      } catch (_) {
-        // Try fenced block ```json ... ``` or ``` ... ```
-        const fenceMatch = text.match(/```(?:json)?\n([\s\S]*?)```/i);
-        if (fenceMatch?.[1]) {
-          const inner = fenceMatch[1].trim();
-          try { return JSON.parse(inner); } catch (_) { /* continue */ }
-        }
-        // Fallback: take substring from first { to last }
-        const first = text.indexOf('{');
-        const last = text.lastIndexOf('}');
-        if (first !== -1 && last !== -1 && last > first) {
-          const slice = text.slice(first, last + 1);
-          return JSON.parse(slice);
-        }
-        throw new Error('Model did not return valid JSON.');
-      }
-    };
+    let design;
+    try {
+      design = JSON.parse(generatedText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Raw text:', generatedText);
+      throw new Error('Failed to parse AI response as JSON');
+    }
 
-    const design = sanitizeToJson(generatedContent);
+    // Normalize the design structure
+    const normalizedElements = (design.elements || []).map((element: any) => ({
+      id: crypto.randomUUID(),
+      type: element.type,
+      content: element.content || '',
+      position: element.position || { x: 0, y: 0 },
+      size: element.size || { width: 100, height: 100 },
+      style: {
+        fontSize: element.style?.fontSize || 16,
+        fontWeight: element.style?.fontWeight || "400",
+        color: element.style?.color || "#000000",
+        textAlign: element.style?.textAlign || "left",
+        fontFamily: element.style?.fontFamily || "Inter, sans-serif",
+        backgroundColor: element.style?.backgroundColor,
+        shapeType: element.style?.shapeType,
+        borderRadius: element.style?.borderRadius,
+        src: element.style?.src,
+      },
+      zIndex: 0,
+    }));
 
-    // Normalize to app schema
-    const normalizeBase = (el: any) => ({
-      id: String(el.id || crypto.randomUUID()),
-      type: el.type,
-      position: el.position ?? { x: 0, y: 0 },
-      size: el.size ?? { width: 100, height: 50 },
-      zIndex: typeof el.zIndex === 'number' ? el.zIndex : 1,
-    });
+    return new Response(
+      JSON.stringify({ elements: normalizedElements }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
-    const normalizedElements = Array.isArray(design?.elements) ? design.elements.map((el: any) => {
-      const base = normalizeBase(el);
-      switch (el.type) {
-        case 'text':
-          return {
-            ...base,
-            type: 'text',
-            content: el.content ?? '',
-            style: {
-              fontSize: el.style?.fontSize ?? el.fontSize ?? 16,
-              fontWeight: el.style?.fontWeight ?? el.fontWeight ?? 'normal',
-              color: el.style?.color ?? el.color ?? '#000000',
-              textAlign: el.style?.textAlign ?? el.textAlign ?? 'left',
-              fontFamily: el.style?.fontFamily ?? el.fontFamily,
-            },
-          };
-        case 'image':
-          return {
-            ...base,
-            type: 'image',
-            src: el.src ?? '',
-            alt: el.alt ?? '',
-            style: {
-              objectFit: el.style?.objectFit ?? el.objectFit ?? 'cover',
-              objectPosition: el.style?.objectPosition ?? el.objectPosition ?? 'center',
-              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 0,
-            },
-          };
-        case 'shape':
-          return {
-            ...base,
-            type: 'shape',
-            shapeType: el.shapeType ?? 'rectangle',
-            style: {
-              backgroundColor: el.style?.backgroundColor ?? el.backgroundColor ?? '#FFFFFF',
-              borderColor: el.style?.borderColor ?? el.borderColor ?? '#000000',
-              borderWidth: el.style?.borderWidth ?? el.borderWidth ?? 0,
-              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 0,
-            },
-          };
-        case 'button':
-          return {
-            ...base,
-            type: 'button',
-            text: el.text ?? 'Click',
-            href: el.href ?? '#',
-            style: {
-              backgroundColor: el.style?.backgroundColor ?? el.backgroundColor ?? '#000000',
-              color: el.style?.color ?? el.color ?? '#FFFFFF',
-              fontSize: el.style?.fontSize ?? el.fontSize ?? 16,
-              borderRadius: el.style?.borderRadius ?? el.borderRadius ?? 6,
-              paddingX: el.style?.paddingX ?? el.paddingX ?? 12,
-              paddingY: el.style?.paddingY ?? el.paddingY ?? 8,
-            },
-          };
-        default:
-          return base; // unknown types pass-through
-      }
-    }) : [];
-
-    const appDesign = { elements: normalizedElements };
-
-    return new Response(JSON.stringify(appDesign), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error in design-with-ai function:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in design-with-ai:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
