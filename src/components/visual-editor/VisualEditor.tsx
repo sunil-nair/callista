@@ -26,6 +26,7 @@ interface VisualEditorProps {
   initialName?: string;
   initialApiShortcode?: string;
   initialTemplate?: EmailTemplate;
+  initialHtml?: string;
   onSave: (name: string, apiShortcode: string, template: EmailTemplate, html: string) => void;
   onSaveAs?: (name: string, apiShortcode: string, template: EmailTemplate, html: string) => void;
   onPreview?: (name: string, html: string, template: EmailTemplate) => void;
@@ -40,6 +41,7 @@ export const VisualEditor = ({
   initialName = "",
   initialApiShortcode = "",
   initialTemplate = defaultTemplate,
+  initialHtml = "",
   onSave,
   onSaveAs,
   onPreview,
@@ -53,9 +55,8 @@ export const VisualEditor = ({
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
-  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
-  const [htmlContent, setHtmlContent] = useState('');
-  const [isRawHTMLMode, setIsRawHTMLMode] = useState(false);
+  const [htmlContent, setHtmlContent] = useState(initialHtml || '');
+  const [debouncedHtml, setDebouncedHtml] = useState(initialHtml || '');
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Use custom hook for element operations
@@ -97,6 +98,19 @@ export const VisualEditor = ({
   const dynamicCanvasHeight = calculateCanvasHeight();
 
   const selectedElement = template.elements.find((el) => el.id === selectedElementId) || null;
+
+  // Initialize and debounce HTML content
+  useEffect(() => {
+    const initial = (initialHtml && initialHtml.trim()) ? initialHtml : HTMLGenerator.generateHTML(template);
+    setHtmlContent(initial);
+    setDebouncedHtml(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedHtml(htmlContent), 250);
+    return () => clearTimeout(t);
+  }, [htmlContent]);
 
   // Detect changes
   useEffect(() => {
@@ -150,7 +164,7 @@ export const VisualEditor = ({
       return;
     }
 
-    const html = generateHTML();
+    const html = htmlContent?.trim() ? htmlContent : generateHTML();
     onSave(templateName, apiShortcode, template, html);
     setHasChanges(false); // Reset after save
   };
@@ -166,7 +180,7 @@ export const VisualEditor = ({
       return;
     }
 
-    const html = generateHTML();
+    const html = htmlContent?.trim() ? htmlContent : generateHTML();
     if (onSaveAs) {
       onSaveAs(newName, newShortcode, template, html);
       setHasChanges(false);
@@ -175,7 +189,7 @@ export const VisualEditor = ({
 
   const handlePreview = () => {
     if (onPreview) {
-      const html = generateHTML();
+      const html = htmlContent?.trim() ? htmlContent : generateHTML();
       onPreview(templateName || "Untitled Template", html, template);
     }
   };
@@ -190,22 +204,12 @@ export const VisualEditor = ({
 
   const handleImportHTML = (html: string) => {
     try {
-      const parsedElements = HTMLParser.parseHTML(html);
-      
-      if (parsedElements.length === 0) {
-        toast.error("No elements found in HTML");
-        return;
-      }
-
-      setTemplate((prev) => ({
-        ...prev,
-        elements: [...prev.elements, ...parsedElements],
-      }));
-      
-      toast.success(`Imported ${parsedElements.length} elements from HTML`);
+      setHtmlContent(html);
+      setDebouncedHtml(html);
+      toast.success("HTML loaded into editor");
     } catch (error) {
-      console.error("Error parsing HTML:", error);
-      toast.error("Failed to parse HTML");
+      console.error("Error loading HTML:", error);
+      toast.error("Failed to load HTML");
     }
   };
 
@@ -395,14 +399,16 @@ export const VisualEditor = ({
             <div className="px-4 py-2 border-b bg-muted/50 flex justify-between items-center flex-shrink-0">
               <h3 className="text-sm font-semibold">Email Preview</h3>
             </div>
-            <div className="flex-1 overflow-auto p-8">
-              <div className="bg-white shadow-2xl rounded-lg mx-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
-                <div 
-                  dangerouslySetInnerHTML={{ __html: htmlContent }}
-                  className="w-full"
-                />
-              </div>
-            </div>
+             <div className="flex-1 overflow-auto p-8">
+               <div className="bg-white shadow-2xl rounded-lg mx-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
+                 <iframe
+                   srcDoc={debouncedHtml}
+                   className="w-full h-[80vh] border-0 rounded-lg"
+                   title="Email Preview"
+                   sandbox="allow-same-origin"
+                 />
+               </div>
+             </div>
           </div>
         </div>
       </div>

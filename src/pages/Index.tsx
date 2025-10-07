@@ -164,6 +164,7 @@ const Index = () => {
             initialName={selectedTemplate?.name || ""}
             initialApiShortcode={selectedTemplate?.api_shortcode || ""}
             initialTemplate={selectedTemplate?.json_template}
+            initialHtml={selectedTemplate?.html || ""}
             onSave={handleSave}
             onSaveAs={handleSaveAs}
             onPreview={(name, html, template) => {
