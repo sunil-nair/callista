@@ -47,30 +47,43 @@ export class HTMLParser {
         return;
       }
       
-      // Check if it's a shape (div/span with background color but no/little text)
-      if (this.looksLikeShape(element, computedStyle)) {
+      // Check if it's a container div with background color (create shape)
+      const hasBackgroundColor = computedStyle.backgroundColor && 
+        computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && 
+        computedStyle.backgroundColor !== 'transparent';
+      
+      if (hasBackgroundColor && (parseInt(computedStyle.width) > 0 || parseInt(computedStyle.height) > 0)) {
         const shapeElement = this.createShapeElement(element, computedStyle, parentX);
         if (shapeElement) elements.push(shapeElement);
-        return;
       }
       
-      // Check if it has text content
+      // Check if element has direct text content
       const textContent = this.getDirectTextContent(element);
       if (textContent.trim()) {
         const textElement = this.createTextElement(element, textContent, computedStyle, parentX);
-        if (textElement) elements.push(textElement);
+        if (textElement) {
+          elements.push(textElement);
+          // Don't traverse children if we created a text element
+          return;
+        }
       }
       
-      // Traverse children
+      // Traverse children for nested structures
       element.childNodes.forEach(child => {
-        this.traverseNode(child, elements, parentX + 10);
+        this.traverseNode(child, elements, parentX);
       });
     }
   }
 
   private static getDirectTextContent(element: HTMLElement): string {
-    // Get all text content, including from child text nodes
-    return element.textContent?.trim() || '';
+    let text = '';
+    element.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const content = node.textContent?.trim() || '';
+        if (content) text += content + ' ';
+      }
+    });
+    return text.trim();
   }
 
   private static createTextElement(
