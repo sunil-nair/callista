@@ -5,6 +5,7 @@ import { Eye, Save, Copy, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightC
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
+import { EditHTMLDialog } from "./EditHTMLDialog";
 import { AIDesignDialog } from "../AIDesignDialog";
 import { SaveAsDialog } from "./SaveAsDialog";
 import { RenderableElement } from "./elements/RenderableElement";
@@ -366,6 +367,9 @@ export const VisualEditor = ({
 
             {/* Import HTML */}
             <ImportHTMLDialog onImport={handleImportHTML} />
+            
+            {/* Edit HTML */}
+            <EditHTMLDialog template={template} onUpdate={setTemplate} />
 
             {/* AI Design */}
             <AIDesignDialog 
