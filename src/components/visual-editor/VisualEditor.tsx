@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Save, Copy, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Eye, Save, Copy, ChevronLeft, ChevronRight, PanelLeftClose, PanelRightClose, Monitor, Tablet, Smartphone, Grid3x3, Code } from "lucide-react";
 import { ComponentPalette } from "./ComponentPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ImportHTMLDialog } from "./ImportHTMLDialog";
-import { EditHTMLDialog } from "./EditHTMLDialog";
 import { AIDesignDialog } from "../AIDesignDialog";
 import { SaveAsDialog } from "./SaveAsDialog";
 import { RenderableElement } from "./elements/RenderableElement";
@@ -53,6 +53,8 @@ export const VisualEditor = ({
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [htmlContent, setHtmlContent] = useState('');
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Use custom hook for element operations
@@ -300,12 +302,6 @@ export const VisualEditor = ({
               />
             </div>
             <div className="ml-auto flex gap-2">
-              {onPreview && (
-                <Button variant="outline" size="sm" onClick={handlePreview} className="h-8">
-                  <Eye className="h-4 w-4 mr-1.5" />
-                  Preview
-                </Button>
-              )}
               {onSaveAs && (
                 <Button variant="outline" size="sm" onClick={() => setShowSaveAsDialog(true)} className="h-8">
                   <Copy className="h-4 w-4 mr-1.5" />
@@ -321,6 +317,36 @@ export const VisualEditor = ({
 
           {/* Bottom Row: Tools */}
           <div className="px-4 py-2 flex items-center gap-2">
+            {/* View Mode Toggle - Center */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex gap-0.5 border rounded-md p-0.5 bg-background">
+                <Button
+                  variant={viewMode === 'visual' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setViewMode('visual');
+                  }}
+                  className="h-7 px-3"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  Visual
+                </Button>
+                <Button
+                  variant={viewMode === 'code' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    const html = generateHTML();
+                    setHtmlContent(html);
+                    setViewMode('code');
+                  }}
+                  className="h-7 px-3"
+                >
+                  <Code className="h-3.5 w-3.5 mr-1.5" />
+                  Code
+                </Button>
+              </div>
+            </div>
+
             {/* Canvas Size Selector with Icons */}
             <div className="flex gap-0.5 border rounded-md p-0.5 bg-background">
               <Button
@@ -367,9 +393,6 @@ export const VisualEditor = ({
 
             {/* Import HTML */}
             <ImportHTMLDialog onImport={handleImportHTML} />
-            
-            {/* Edit HTML */}
-            <EditHTMLDialog template={template} onUpdate={setTemplate} />
 
             {/* AI Design */}
             <AIDesignDialog 
@@ -381,6 +404,43 @@ export const VisualEditor = ({
 
         {/* Canvas - Scrollable */}
         <div className="flex-1 overflow-auto bg-gradient-to-br from-muted/30 to-muted/5">
+          {viewMode === 'code' ? (
+            <div className="h-full p-8">
+              <div className="max-w-6xl mx-auto h-full flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">HTML Code</h3>
+                  <Button
+                    onClick={() => {
+                      try {
+                        const elements = HTMLParser.parseHTML(htmlContent);
+                        if (elements.length === 0) {
+                          toast.error("No valid elements found in HTML");
+                          return;
+                        }
+                        setTemplate({
+                          ...template,
+                          elements,
+                        });
+                        toast.success("HTML applied successfully");
+                        setViewMode('visual');
+                      } catch (error) {
+                        toast.error("Failed to parse HTML");
+                        console.error(error);
+                      }
+                    }}
+                  >
+                    Apply Changes
+                  </Button>
+                </div>
+                <Textarea
+                  value={htmlContent}
+                  onChange={(e) => setHtmlContent(e.target.value)}
+                  className="flex-1 font-mono text-sm resize-none"
+                  placeholder="Edit your HTML here..."
+                />
+              </div>
+            </div>
+          ) : (
           <div className="min-h-full flex items-center justify-center p-8">
             <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
               {/* Ruler guides */}
@@ -434,6 +494,7 @@ export const VisualEditor = ({
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
 
