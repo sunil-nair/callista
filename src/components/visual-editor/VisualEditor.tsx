@@ -385,7 +385,7 @@ export const VisualEditor = ({
           </div>
         </div>
 
-        {/* Split View: Code and Preview */}
+        {/* Split View: Code and Visual Editor */}
         <div className="flex-1 flex overflow-hidden">
           {/* HTML Code Editor */}
           <div className="flex-1 flex flex-col border-r bg-background overflow-hidden">
@@ -397,26 +397,70 @@ export const VisualEditor = ({
                 value={htmlContent}
                 onChange={(e) => setHtmlContent(e.target.value)}
                 className="w-full h-full font-mono text-sm resize-none"
-                placeholder="Paste your email HTML here..."
+                placeholder="HTML will be generated from your design..."
+                readOnly
               />
             </div>
           </div>
 
-          {/* Email Preview */}
+          {/* Visual Editor Canvas */}
           <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-muted/30 to-muted/5">
             <div className="px-4 py-2 border-b bg-muted/50 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-sm font-semibold">Email Preview</h3>
+              <h3 className="text-sm font-semibold">Visual Editor</h3>
             </div>
-             <div className="flex-1 overflow-auto p-8">
-               <div className="bg-white shadow-2xl rounded-lg mx-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
-                 <iframe
-                   srcDoc={debouncedHtml}
-                   className="w-full h-[80vh] border-0 rounded-lg"
-                   title="Email Preview"
-                   sandbox="allow-same-origin"
-                 />
-               </div>
-             </div>
+            <div className="flex-1 overflow-auto p-8">
+              <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px', margin: '0 auto' }}>
+                {/* Ruler guides */}
+                <div className="absolute -left-8 top-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l" style={{ height: dynamicCanvasHeight }}>
+                  {Array.from({ length: Math.floor(dynamicCanvasHeight / 50) }).map((_, i) => (
+                    <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
+                      {i * 50}
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute -top-8 left-0 right-0 h-8 bg-muted/50 flex items-center justify-start text-xs text-muted-foreground rounded-t">
+                  {Array.from({ length: Math.floor(template.canvasSize.width / 50) }).map((_, i) => (
+                    <div key={i} style={{ position: 'absolute', left: i * 50, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
+                      {i * 50}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Safe zone guide overlay */}
+                <div 
+                  className="absolute border-2 border-dashed border-primary/20 pointer-events-none rounded"
+                  style={{
+                    left: 20,
+                    top: 20,
+                    right: 20,
+                    width: template.canvasSize.width - 40,
+                    height: dynamicCanvasHeight - 40,
+                  }}
+                >
+                  <span className="absolute -top-6 left-0 text-xs text-primary/60 font-medium">Safe Zone (20px margin)</span>
+                </div>
+
+                <div
+                  ref={canvasRef}
+                  className={`bg-white shadow-2xl mx-auto relative rounded-lg overflow-hidden ${showGrid ? 'bg-grid' : ''}`}
+                  style={{
+                    width: template.canvasSize.width,
+                    minHeight: dynamicCanvasHeight,
+                    backgroundImage: showGrid 
+                      ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
+                      : 'none',
+                    backgroundSize: showGrid ? '20px 20px' : 'auto',
+                  }}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setSelectedElementId(null);
+                    }
+                  }}
+                >
+                  {template.elements.map(renderElement)}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

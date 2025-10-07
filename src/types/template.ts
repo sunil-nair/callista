@@ -27,6 +27,7 @@ export interface TextElement extends BaseElement {
     color: string;
     textAlign: 'left' | 'center' | 'right';
     fontFamily?: string;
+    backgroundColor?: string;
   };
 }
 
@@ -38,6 +39,7 @@ export interface ImageElement extends BaseElement {
     objectFit: 'contain' | 'cover' | 'fill';
     objectPosition?: string;
     borderRadius: number;
+    backgroundColor?: string;
   };
 }
 

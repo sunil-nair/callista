@@ -16,8 +16,10 @@ export const TextElement = ({ element, isEditing, onUpdate, onBlur, onKeyDown }:
     color: element.style.color,
     textAlign: element.style.textAlign,
     fontFamily: element.style.fontFamily || 'Inter, sans-serif',
+    backgroundColor: element.style.backgroundColor,
     width: '100%',
     height: '100%',
+    padding: element.style.backgroundColor ? '8px' : '0',
   };
 
   if (isEditing) {

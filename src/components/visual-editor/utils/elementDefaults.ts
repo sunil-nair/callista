@@ -7,13 +7,14 @@ export const createDefaultTextElement = (position: { x: number; y: number }, zIn
   position,
   size: { width: 200, height: 50 },
   zIndex,
-  content: 'Enter text here',
+  content: 'New Text Element',
   style: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#000000',
+    color: '#ffffff',
     textAlign: 'left',
     fontFamily: 'Inter, sans-serif',
+    backgroundColor: '#6b7280',
   },
 });
 
@@ -21,13 +22,14 @@ export const createDefaultImageElement = (position: { x: number; y: number }, zI
   id: uuidv4(),
   type: 'image',
   position,
-  size: { width: 200, height: 100 },
+  size: { width: 200, height: 150 },
   zIndex,
-  src: 'https://via.placeholder.com/200x100',
-  alt: 'Image',
+  src: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d',
+  alt: 'Placeholder image',
   style: {
-    objectFit: 'contain',
-    borderRadius: 0,
+    objectFit: 'cover',
+    borderRadius: 8,
+    backgroundColor: '#6b7280',
   },
 });
 
@@ -35,14 +37,14 @@ export const createDefaultShapeElement = (position: { x: number; y: number }, zI
   id: uuidv4(),
   type: 'shape',
   position,
-  size: { width: 200, height: 200 },
+  size: { width: 200, height: 100 },
   zIndex,
   shapeType: 'rectangle',
   style: {
-    backgroundColor: '#cccccc',
-    borderColor: '#000000',
-    borderWidth: 0,
-    borderRadius: 0,
+    backgroundColor: '#6b7280',
+    borderColor: '#4b5563',
+    borderWidth: 2,
+    borderRadius: 8,
   },
 });
 
@@ -52,15 +54,15 @@ export const createDefaultButtonElement = (position: { x: number; y: number }, z
   position,
   size: { width: 150, height: 40 },
   zIndex,
-  text: 'Click me',
-  href: 'https://example.com',
+  text: 'Click Me',
+  href: '#',
   style: {
-    backgroundColor: '#0066cc',
+    backgroundColor: '#6b7280',
     color: '#ffffff',
     fontSize: 16,
-    borderRadius: 4,
-    paddingX: 20,
-    paddingY: 10,
+    borderRadius: 8,
+    paddingX: 24,
+    paddingY: 12,
   },
 });
 
