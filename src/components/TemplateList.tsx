@@ -4,14 +4,12 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Plus, Search, Trash2, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { EmailTemplate } from "@/types/template";
-
 interface Template {
   id: string;
   name: string;
   html: string;
-  json_template: EmailTemplate;
-  api_shortcode: string;
+  json_template: any;
+  api_shortcode: string | null;
   created_at: string;
   updated_at: string;
 }

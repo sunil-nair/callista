@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { VisualEditor } from "@/components/visual-editor/VisualEditor";
+import { StructuredTemplateEditor } from "@/components/structured-editor/StructuredTemplateEditor";
 import { TemplateList } from "@/components/TemplateList";
 import { PreviewDialog } from "@/components/PreviewDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
-import { EmailTemplate } from "@/types/template";
+import { StructuredTemplate } from "@/types/structuredTemplate";
 
 // Use public schema for email templates
 const emailTemplatesTable = () => (supabase as any).from('email_templates');
@@ -14,8 +14,8 @@ interface Template {
   id: string;
   name: string;
   html: string;
-  json_template: EmailTemplate;
-  api_shortcode: string;
+  json_template: StructuredTemplate | null;
+  api_shortcode: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,7 +41,7 @@ const Index = () => {
       
       const templatesWithParsed = ((data as any[]) || []).map((t: any) => ({
         ...t,
-        json_template: t.json_template || { elements: [], canvasSize: { width: 375, height: 667 } }
+        json_template: t.json_template
       })) as Template[];
       
       setTemplates(templatesWithParsed);
@@ -53,12 +53,17 @@ const Index = () => {
     }
   };
 
-  const handleSave = async (name: string, apiShortcode: string, template: EmailTemplate, html: string) => {
+  const handleSave = async (template: StructuredTemplate, html: string) => {
     try {
       if (selectedTemplate) {
         // Update existing template
         const { error } = await emailTemplatesTable()
-          .update({ name, api_shortcode: apiShortcode, html, json_template: template })
+          .update({ 
+            name: template.name, 
+            api_shortcode: template.apiShortcode || null, 
+            html, 
+            json_template: template 
+          })
           .eq("id", selectedTemplate.id);
 
         if (error) throw error;
@@ -66,25 +71,34 @@ const Index = () => {
       } else {
         // Create new template
         const { error } = await emailTemplatesTable()
-          .insert([{ name, api_shortcode: apiShortcode, html, json_template: template }]);
+          .insert([{ 
+            name: template.name, 
+            api_shortcode: template.apiShortcode || null, 
+            html, 
+            json_template: template 
+          }]);
 
         if (error) throw error;
         toast.success("Template created successfully!");
       }
 
       await loadTemplates();
-      setSelectedTemplate(null);
     } catch (error) {
       console.error("Error saving template:", error);
       toast.error("Failed to save template");
     }
   };
 
-  const handleSaveAs = async (name: string, apiShortcode: string, template: EmailTemplate, html: string) => {
+  const handleSaveAs = async (template: StructuredTemplate, html: string) => {
     try {
       // Always create a new template (never update)
       const { error } = await emailTemplatesTable()
-        .insert([{ name, api_shortcode: apiShortcode, html, json_template: template }]);
+        .insert([{ 
+          name: template.name, 
+          api_shortcode: template.apiShortcode || null, 
+          html, 
+          json_template: template 
+        }]);
 
       if (error) throw error;
       toast.success("Template saved as new template!");
@@ -159,21 +173,17 @@ const Index = () => {
 
         {/* Editor Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <VisualEditor
+          <StructuredTemplateEditor
             key={selectedTemplate?.id || "new"}
-            initialName={selectedTemplate?.name || ""}
-            initialApiShortcode={selectedTemplate?.api_shortcode || ""}
-            initialTemplate={selectedTemplate?.json_template}
-            initialHtml={selectedTemplate?.html || ""}
+            initialTemplate={selectedTemplate?.json_template || undefined}
             onSave={handleSave}
-            onSaveAs={handleSaveAs}
-            onPreview={(name, html, template) => {
+            onPreview={(template) => {
               setPreviewTemplate({ 
                 id: selectedTemplate?.id || "preview", 
-                name, 
-                html,
-                json_template: template,
-                api_shortcode: selectedTemplate?.api_shortcode || "",
+                name: template.name, 
+                html: template.html,
+                json_template: template.json_template,
+                api_shortcode: selectedTemplate?.api_shortcode || null,
                 created_at: selectedTemplate?.created_at || new Date().toISOString(),
                 updated_at: selectedTemplate?.updated_at || new Date().toISOString()
               });
