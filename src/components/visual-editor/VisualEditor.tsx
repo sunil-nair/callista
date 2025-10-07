@@ -405,39 +405,56 @@ export const VisualEditor = ({
         {/* Canvas - Scrollable */}
         <div className="flex-1 overflow-auto bg-gradient-to-br from-muted/30 to-muted/5">
           {viewMode === 'code' ? (
-            <div className="h-full p-8">
-              <div className="max-w-6xl mx-auto h-full flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">HTML Code</h3>
-                  <Button
-                    onClick={() => {
-                      try {
-                        const elements = HTMLParser.parseHTML(htmlContent);
-                        if (elements.length === 0) {
-                          toast.error("No valid elements found in HTML");
-                          return;
+            <div className="h-full p-4">
+              <div className="h-full flex gap-4">
+                {/* HTML Editor */}
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-semibold">HTML Code</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        try {
+                          const elements = HTMLParser.parseHTML(htmlContent);
+                          if (elements.length === 0) {
+                            toast.error("No valid elements found in HTML");
+                            return;
+                          }
+                          setTemplate({
+                            ...template,
+                            elements,
+                          });
+                          toast.success("HTML applied successfully");
+                          setViewMode('visual');
+                        } catch (error) {
+                          toast.error("Failed to parse HTML");
+                          console.error(error);
                         }
-                        setTemplate({
-                          ...template,
-                          elements,
-                        });
-                        toast.success("HTML applied successfully");
-                        setViewMode('visual');
-                      } catch (error) {
-                        toast.error("Failed to parse HTML");
-                        console.error(error);
-                      }
-                    }}
-                  >
-                    Apply Changes
-                  </Button>
+                      }}
+                    >
+                      Apply Changes
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={htmlContent}
+                    onChange={(e) => setHtmlContent(e.target.value)}
+                    className="flex-1 font-mono text-sm resize-none"
+                    placeholder="Paste your HTML here..."
+                  />
                 </div>
-                <Textarea
-                  value={htmlContent}
-                  onChange={(e) => setHtmlContent(e.target.value)}
-                  className="flex-1 font-mono text-sm resize-none"
-                  placeholder="Edit your HTML here..."
-                />
+
+                {/* HTML Preview */}
+                <div className="flex-1 flex flex-col gap-2">
+                  <h3 className="text-sm font-semibold">Preview</h3>
+                  <div className="flex-1 border rounded-md bg-white overflow-auto">
+                    <iframe
+                      srcDoc={htmlContent}
+                      className="w-full h-full border-0"
+                      title="HTML Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
