@@ -397,8 +397,7 @@ export const VisualEditor = ({
                 value={htmlContent}
                 onChange={(e) => setHtmlContent(e.target.value)}
                 className="w-full h-full font-mono text-sm resize-none"
-                placeholder="HTML will be generated from your design..."
-                readOnly
+                placeholder="Paste your HTML code here or design visually..."
               />
             </div>
           </div>
