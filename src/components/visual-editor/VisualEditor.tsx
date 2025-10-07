@@ -445,13 +445,11 @@ export const VisualEditor = ({
 
                 {/* HTML Preview */}
                 <div className="flex-1 flex flex-col gap-2">
-                  <h3 className="text-sm font-semibold">Preview</h3>
-                  <div className="flex-1 border rounded-md bg-white overflow-auto">
-                    <iframe
-                      srcDoc={htmlContent}
-                      className="w-full h-full border-0"
-                      title="HTML Preview"
-                      sandbox="allow-same-origin"
+                  <h3 className="text-sm font-semibold">Email Preview</h3>
+                  <div className="flex-1 border rounded-md bg-white overflow-auto p-4">
+                    <div 
+                      dangerouslySetInnerHTML={{ __html: htmlContent }}
+                      className="w-full h-full"
                     />
                   </div>
                 </div>
