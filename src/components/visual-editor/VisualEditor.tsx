@@ -55,6 +55,7 @@ export const VisualEditor = ({
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
   const [htmlContent, setHtmlContent] = useState('');
+  const [isRawHTMLMode, setIsRawHTMLMode] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Use custom hook for element operations
@@ -335,8 +336,10 @@ export const VisualEditor = ({
                   variant={viewMode === 'code' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => {
-                    const html = generateHTML();
-                    setHtmlContent(html);
+                    if (!isRawHTMLMode) {
+                      const html = generateHTML();
+                      setHtmlContent(html);
+                    }
                     setViewMode('code');
                   }}
                   className="h-7 px-3"
@@ -411,29 +414,16 @@ export const VisualEditor = ({
                 <div className="flex-1 flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <h3 className="text-sm font-semibold">HTML Code</h3>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        try {
-                          const elements = HTMLParser.parseHTML(htmlContent);
-                          if (elements.length === 0) {
-                            toast.error("No valid elements found in HTML");
-                            return;
-                          }
-                          setTemplate({
-                            ...template,
-                            elements,
-                          });
-                          toast.success("HTML applied successfully");
-                          setViewMode('visual');
-                        } catch (error) {
-                          toast.error("Failed to parse HTML");
-                          console.error(error);
-                        }
-                      }}
-                    >
-                      Apply Changes
-                    </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setIsRawHTMLMode(true);
+                      toast.success("HTML applied - viewing in Visual mode");
+                      setViewMode('visual');
+                    }}
+                  >
+                    Apply Changes
+                  </Button>
                   </div>
                   <Textarea
                     value={htmlContent}
@@ -455,57 +445,37 @@ export const VisualEditor = ({
                 </div>
               </div>
             </div>
+          ) : isRawHTMLMode ? (
+            <div className="min-h-full flex items-center justify-center p-8">
+              <div className="relative">
+                <div className="mb-4 flex justify-between items-center">
+                  <h3 className="text-sm font-semibold">Email Preview (Raw HTML)</h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsRawHTMLMode(false);
+                      setHtmlContent('');
+                      toast.info("Switched back to element-based editor");
+                    }}
+                  >
+                    Switch to Element Editor
+                  </Button>
+                </div>
+                <div className="bg-white shadow-2xl rounded-lg overflow-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
           <div className="min-h-full flex items-center justify-center p-8">
             <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
               {/* Ruler guides */}
               <div className="absolute -left-8 top-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l" style={{ height: dynamicCanvasHeight }}>
-                {Array.from({ length: Math.floor(dynamicCanvasHeight / 50) }).map((_, i) => (
-                  <div key={i} style={{ position: 'absolute', top: i * 50, left: 0, right: 0, textAlign: 'center' }}>
-                    {i * 50}
-                  </div>
-                ))}
-              </div>
-              <div className="absolute -top-8 left-0 right-0 h-8 bg-muted/50 flex items-center justify-start text-xs text-muted-foreground rounded-t">
-                {Array.from({ length: Math.floor(template.canvasSize.width / 50) }).map((_, i) => (
-                  <div key={i} style={{ position: 'absolute', left: i * 50, top: 0, bottom: 0, display: 'flex', alignItems: 'center' }}>
-                    {i * 50}
-                  </div>
-                ))}
-              </div>
-
-              {/* Safe zone guide overlay */}
-              <div 
-                className="absolute border-2 border-dashed border-primary/20 pointer-events-none rounded"
-                style={{
-                  left: 20,
-                  top: 20,
-                  right: 20,
-                  width: template.canvasSize.width - 40,
-                  height: dynamicCanvasHeight - 40,
-                }}
-              >
-                <span className="absolute -top-6 left-0 text-xs text-primary/60 font-medium">Safe Zone (20px margin)</span>
-              </div>
-
-              <div
-                ref={canvasRef}
-                className={`bg-white shadow-2xl mx-auto relative rounded-lg overflow-hidden ${showGrid ? 'bg-grid' : ''}`}
-                style={{
-                  width: template.canvasSize.width,
-                  minHeight: dynamicCanvasHeight,
-                  backgroundImage: showGrid 
-                    ? 'linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)'
-                    : 'none',
-                  backgroundSize: showGrid ? '20px 20px' : 'auto',
-                }}
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) {
-                    setSelectedElementId(null);
-                  }
-                }}
-              >
-                {template.elements.map(renderElement)}
+...
               </div>
             </div>
           </div>
