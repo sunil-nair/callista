@@ -348,6 +348,26 @@ export const PropertiesPanel = ({
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label htmlFor="textBackgroundColor" className="text-xs">Background Color</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="textBackgroundColor"
+                  type="color"
+                  value={selectedElement.style.backgroundColor || '#3a3a3a'}
+                  onChange={(e) => handleStyleUpdate('backgroundColor', e.target.value)}
+                  className="h-8 w-16"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleStyleUpdate('backgroundColor', undefined)}
+                  className="flex-1"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
           </>
         )}
 
