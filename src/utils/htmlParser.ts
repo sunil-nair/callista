@@ -69,13 +69,8 @@ export class HTMLParser {
   }
 
   private static getDirectTextContent(element: HTMLElement): string {
-    let text = '';
-    element.childNodes.forEach(node => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        text += node.textContent || '';
-      }
-    });
-    return text;
+    // Get all text content, including from child text nodes
+    return element.textContent?.trim() || '';
   }
 
   private static createTextElement(
@@ -91,12 +86,24 @@ export class HTMLParser {
     const color = this.rgbToHex(styles.color) || '#000000';
     const textAlign = (styles.textAlign as 'left' | 'center' | 'right') || 'left';
     const fontFamily = styles.fontFamily?.split(',')[0].replace(/['"]/g, '') || 'Inter';
+    const backgroundColor = this.rgbToHex(styles.backgroundColor);
+
+    // Extract position from inline styles
+    const left = parseInt(styles.left) || x;
+    const top = parseInt(styles.top) || this.yOffset;
+    const width = parseInt(styles.width) || 250;
+    const height = parseInt(styles.height) || Math.max(40, Math.ceil(content.length / 30) * 20);
+
+    // Only increment yOffset if no explicit position
+    if (!styles.top) {
+      this.yOffset += height + 20;
+    }
 
     return {
       id: uuidv4(),
       type: 'text',
-      position: { x, y: this.yOffset },
-      size: { width: 250, height: Math.max(40, Math.ceil(content.length / 30) * 20) },
+      position: { x: left, y: top },
+      size: { width, height },
       zIndex: this.elementCounter++,
       content,
       style: {
@@ -105,6 +112,7 @@ export class HTMLParser {
         color,
         textAlign,
         fontFamily: `${fontFamily}, sans-serif`,
+        backgroundColor,
       },
     };
   }
@@ -117,13 +125,21 @@ export class HTMLParser {
     const img = element as HTMLImageElement;
     if (!img.src) return null;
 
+    // Extract position and size from inline styles
+    const left = parseInt(styles.left) || x;
+    const top = parseInt(styles.top) || this.yOffset;
     const width = parseInt(styles.width) || 200;
     const height = parseInt(styles.height) || 150;
+
+    // Only increment yOffset if no explicit position
+    if (!styles.top) {
+      this.yOffset += height + 20;
+    }
 
     const imageElement: ImageElement = {
       id: uuidv4(),
       type: 'image',
-      position: { x, y: this.yOffset },
+      position: { x: left, y: top },
       size: { width, height },
       zIndex: this.elementCounter++,
       src: img.src,
@@ -134,7 +150,6 @@ export class HTMLParser {
       },
     };
 
-    this.yOffset += height + 20;
     return imageElement;
   }
 
@@ -143,6 +158,9 @@ export class HTMLParser {
     styles: CSSStyleDeclaration,
     x: number
   ): ShapeElement | null {
+    // Extract position and size from inline styles
+    const left = parseInt(styles.left) || x;
+    const top = parseInt(styles.top) || this.yOffset;
     const width = parseInt(styles.width) || 200;
     const height = parseInt(styles.height) || 100;
     const backgroundColor = this.rgbToHex(styles.backgroundColor) || '#e5e7eb';
@@ -150,10 +168,15 @@ export class HTMLParser {
     const borderWidth = parseInt(styles.borderWidth) || 0;
     const borderRadius = parseInt(styles.borderRadius) || 0;
 
+    // Only increment yOffset if no explicit position
+    if (!styles.top) {
+      this.yOffset += height + 20;
+    }
+
     const shapeElement: ShapeElement = {
       id: uuidv4(),
       type: 'shape',
-      position: { x, y: this.yOffset },
+      position: { x: left, y: top },
       size: { width, height },
       zIndex: this.elementCounter++,
       shapeType: borderRadius > width / 3 ? 'circle' : 'rectangle',
@@ -165,7 +188,6 @@ export class HTMLParser {
       },
     };
 
-    this.yOffset += height + 20;
     return shapeElement;
   }
 
@@ -181,10 +203,19 @@ export class HTMLParser {
     const fontSize = parseInt(styles.fontSize) || 16;
     const borderRadius = parseInt(styles.borderRadius) || 8;
 
+    // Extract position from inline styles
+    const left = parseInt(styles.left) || x;
+    const top = parseInt(styles.top) || this.yOffset;
+
+    // Only increment yOffset if no explicit position
+    if (!styles.top) {
+      this.yOffset += 60;
+    }
+
     const buttonElement: ButtonElement = {
       id: uuidv4(),
       type: 'button',
-      position: { x, y: this.yOffset },
+      position: { x: left, y: top },
       size: { width: 150, height: 40 },
       zIndex: this.elementCounter++,
       text,
@@ -199,7 +230,6 @@ export class HTMLParser {
       },
     };
 
-    this.yOffset += 60;
     return buttonElement;
   }
 
@@ -224,9 +254,15 @@ export class HTMLParser {
   }
 
   private static getComputedStyles(element: HTMLElement): CSSStyleDeclaration {
-    // Try to extract inline styles
-    const style = element.style;
-    return style as CSSStyleDeclaration;
+    // Parse inline style attribute
+    const styleAttr = element.getAttribute('style');
+    if (styleAttr) {
+      // Create a temporary element to parse styles
+      const tempDiv = document.createElement('div');
+      tempDiv.setAttribute('style', styleAttr);
+      return tempDiv.style;
+    }
+    return element.style as CSSStyleDeclaration;
   }
 
   private static rgbToHex(rgb: string): string | null {
