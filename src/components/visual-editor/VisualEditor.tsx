@@ -107,6 +107,14 @@ export const VisualEditor = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Regenerate HTML when template elements change
+  useEffect(() => {
+    if (template.elements.length > 0 || template.canvasSize) {
+      const generatedHtml = HTMLGenerator.generateHTML(template);
+      setHtmlContent(generatedHtml);
+    }
+  }, [template]);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedHtml(htmlContent), 250);
     return () => clearTimeout(t);
