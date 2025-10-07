@@ -470,6 +470,8 @@ export const VisualEditor = ({
         <div className="relative flex-shrink-0 h-full">
           <PropertiesPanel
             selectedElement={selectedElement}
+            allElements={template.elements}
+            onSelectElement={setSelectedElementId}
             onUpdateElement={handleUpdateElement}
             onDeleteElement={handleDeleteElement}
             onBringForward={handleBringForward}

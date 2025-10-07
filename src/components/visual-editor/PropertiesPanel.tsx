@@ -4,14 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TemplateElement } from "@/types/template";
-import { Trash2, ArrowUp, ArrowDown, AtSign, Type, Image as ImageIcon, Square, MousePointer } from "lucide-react";
+import { Trash2, ArrowUp, ArrowDown, AtSign, Type, Image as ImageIcon, Square, MousePointer, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { availableFonts } from "@/lib/fonts";
 import { toast } from "sonner";
 
 interface PropertiesPanelProps {
   selectedElement: TemplateElement | null;
+  allElements: TemplateElement[];
+  onSelectElement: (id: string) => void;
   onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
   onDeleteElement: (id: string) => void;
   onBringForward: (id: string) => void;
@@ -20,6 +23,8 @@ interface PropertiesPanelProps {
 
 export const PropertiesPanel = ({
   selectedElement,
+  allElements,
+  onSelectElement,
   onUpdateElement,
   onDeleteElement,
   onBringForward,
@@ -28,23 +33,8 @@ export const PropertiesPanel = ({
   const [showPlaceholderInput, setShowPlaceholderInput] = useState(false);
   const [placeholderName, setPlaceholderName] = useState("");
 
-  if (!selectedElement) {
-    return (
-      <div className="w-80 border-l bg-card p-6 flex flex-col items-center justify-center text-center h-full">
-        <div className="max-w-xs space-y-3">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <AtSign className="h-6 w-6 text-primary/50" />
-          </div>
-          <h3 className="font-semibold text-sm">No Element Selected</h3>
-          <p className="text-xs text-muted-foreground">
-            Select an element on the canvas to edit its properties
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const handleStyleUpdate = (key: string, value: any) => {
+    if (!selectedElement) return;
     onUpdateElement(selectedElement.id, {
       style: { ...selectedElement.style, [key]: value },
     } as any);
@@ -56,7 +46,7 @@ export const PropertiesPanel = ({
       return;
     }
 
-    if (selectedElement.type === 'text') {
+    if (selectedElement && selectedElement.type === 'text') {
       const currentContent = selectedElement.content || "";
       const placeholder = `{{${placeholderName}}}`;
       onUpdateElement(selectedElement.id, {
@@ -68,8 +58,8 @@ export const PropertiesPanel = ({
     }
   };
 
-  const getElementIcon = () => {
-    switch (selectedElement.type) {
+  const getElementIcon = (type: string) => {
+    switch (type) {
       case 'text': return <Type className="h-3.5 w-3.5" />;
       case 'image': return <ImageIcon className="h-3.5 w-3.5" />;
       case 'shape': return <Square className="h-3.5 w-3.5" />;
@@ -77,7 +67,17 @@ export const PropertiesPanel = ({
     }
   };
 
+  const getElementLabel = (element: TemplateElement) => {
+    switch (element.type) {
+      case 'text': return element.content.substring(0, 20) + (element.content.length > 20 ? '...' : '');
+      case 'image': return 'Image';
+      case 'shape': return element.shapeType === 'circle' ? 'Circle' : 'Rectangle';
+      case 'button': return element.text;
+    }
+  };
+
   const getElementTypeLabel = () => {
+    if (!selectedElement) return '';
     switch (selectedElement.type) {
       case 'text': return 'Text';
       case 'image': return 'Image';
@@ -87,17 +87,65 @@ export const PropertiesPanel = ({
   };
 
   return (
-    <div className="w-80 border-l bg-card p-4 overflow-y-auto h-full">
-      <div className="space-y-4">
-        {/* Element Type Badge */}
-        <div className="flex items-center justify-between pb-3 border-b">
-          <Badge variant="secondary" className="gap-1.5">
-            {getElementIcon()}
-            <span className="font-medium">{getElementTypeLabel()}</span>
-          </Badge>
+    <div className="w-80 border-l bg-card flex flex-col h-full overflow-hidden">
+      {/* Components List */}
+      <div className="border-b p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Components</h3>
+          <Badge variant="secondary" className="ml-auto">{allElements.length}</Badge>
         </div>
+        <ScrollArea className="h-32">
+          <div className="space-y-1">
+            {allElements.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No components yet</p>
+            ) : (
+              allElements
+                .sort((a, b) => b.zIndex - a.zIndex)
+                .map((element) => (
+                  <button
+                    key={element.id}
+                    onClick={() => onSelectElement(element.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
+                      selectedElement?.id === element.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    {getElementIcon(element.type)}
+                    <span className="flex-1 truncate">{getElementLabel(element)}</span>
+                    <span className="text-[10px] opacity-60">z:{element.zIndex}</span>
+                  </button>
+                ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Properties */}
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          {!selectedElement ? (
+            <div className="flex flex-col items-center justify-center text-center py-8">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <AtSign className="h-6 w-6 text-primary/50" />
+              </div>
+              <h3 className="font-semibold text-sm">No Element Selected</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Select a component above to edit
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Element Type Badge */}
+              <div className="flex items-center justify-between pb-3 border-b">
+                <Badge variant="secondary" className="gap-1.5">
+                  {getElementIcon(selectedElement.type)}
+                  <span className="font-medium">{getElementTypeLabel()}</span>
+                </Badge>
+              </div>
         
-        <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">Properties</h3>
           <div className="flex gap-1">
             <Button
@@ -462,7 +510,10 @@ export const PropertiesPanel = ({
             </div>
           </>
         )}
-      </div>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
