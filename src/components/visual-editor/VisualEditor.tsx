@@ -318,38 +318,6 @@ export const VisualEditor = ({
 
           {/* Bottom Row: Tools */}
           <div className="px-4 py-2 flex items-center gap-2">
-            {/* View Mode Toggle - Center */}
-            <div className="flex-1 flex justify-center">
-              <div className="flex gap-0.5 border rounded-md p-0.5 bg-background">
-                <Button
-                  variant={viewMode === 'visual' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => {
-                    setViewMode('visual');
-                  }}
-                  className="h-7 px-3"
-                >
-                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                  Visual
-                </Button>
-                <Button
-                  variant={viewMode === 'code' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => {
-                    if (!isRawHTMLMode) {
-                      const html = generateHTML();
-                      setHtmlContent(html);
-                    }
-                    setViewMode('code');
-                  }}
-                  className="h-7 px-3"
-                >
-                  <Code className="h-3.5 w-3.5 mr-1.5" />
-                  Code
-                </Button>
-              </div>
-            </div>
-
             {/* Canvas Size Selector with Icons */}
             <div className="flex gap-0.5 border rounded-md p-0.5 bg-background">
               <Button
@@ -405,81 +373,37 @@ export const VisualEditor = ({
           </div>
         </div>
 
-        {/* Canvas - Scrollable */}
-        <div className="flex-1 overflow-auto bg-gradient-to-br from-muted/30 to-muted/5">
-          {viewMode === 'code' ? (
-            <div className="h-full p-4">
-              <div className="h-full flex gap-4">
-                {/* HTML Editor */}
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-semibold">HTML Code</h3>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setIsRawHTMLMode(true);
-                      toast.success("HTML applied - viewing in Visual mode");
-                      setViewMode('visual');
-                    }}
-                  >
-                    Apply Changes
-                  </Button>
-                  </div>
-                  <Textarea
-                    value={htmlContent}
-                    onChange={(e) => setHtmlContent(e.target.value)}
-                    className="flex-1 font-mono text-sm resize-none"
-                    placeholder="Paste your HTML here..."
-                  />
-                </div>
+        {/* Split View: Code and Preview */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* HTML Code Editor */}
+          <div className="flex-1 flex flex-col border-r bg-background overflow-hidden">
+            <div className="px-4 py-2 border-b bg-muted/50 flex justify-between items-center flex-shrink-0">
+              <h3 className="text-sm font-semibold">HTML Code</h3>
+            </div>
+            <div className="flex-1 overflow-hidden p-4">
+              <Textarea
+                value={htmlContent}
+                onChange={(e) => setHtmlContent(e.target.value)}
+                className="w-full h-full font-mono text-sm resize-none"
+                placeholder="Paste your email HTML here..."
+              />
+            </div>
+          </div>
 
-                {/* HTML Preview */}
-                <div className="flex-1 flex flex-col gap-2">
-                  <h3 className="text-sm font-semibold">Email Preview</h3>
-                  <div className="flex-1 border rounded-md bg-white overflow-auto p-4">
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: htmlContent }}
-                      className="w-full h-full"
-                    />
-                  </div>
-                </div>
-              </div>
+          {/* Email Preview */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-muted/30 to-muted/5">
+            <div className="px-4 py-2 border-b bg-muted/50 flex justify-between items-center flex-shrink-0">
+              <h3 className="text-sm font-semibold">Email Preview</h3>
             </div>
-          ) : isRawHTMLMode ? (
-            <div className="min-h-full flex items-center justify-center p-8">
-              <div className="relative">
-                <div className="mb-4 flex justify-between items-center">
-                  <h3 className="text-sm font-semibold">Email Preview (Raw HTML)</h3>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setIsRawHTMLMode(false);
-                      setHtmlContent('');
-                      toast.info("Switched back to element-based editor");
-                    }}
-                  >
-                    Switch to Element Editor
-                  </Button>
-                </div>
-                <div className="bg-white shadow-2xl rounded-lg overflow-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: htmlContent }}
-                    className="w-full h-full"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-          <div className="min-h-full flex items-center justify-center p-8">
-            <div className="relative" style={{ width: template.canvasSize.width + 80, paddingBottom: '40px' }}>
-              {/* Ruler guides */}
-              <div className="absolute -left-8 top-0 w-8 bg-muted/50 flex flex-col items-center justify-start text-xs text-muted-foreground rounded-l" style={{ height: dynamicCanvasHeight }}>
-...
+            <div className="flex-1 overflow-auto p-8">
+              <div className="bg-white shadow-2xl rounded-lg mx-auto" style={{ maxWidth: '800px', minHeight: '600px' }}>
+                <div 
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                  className="w-full"
+                />
               </div>
             </div>
           </div>
-          )}
         </div>
       </div>
 
