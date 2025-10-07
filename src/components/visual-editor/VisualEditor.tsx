@@ -57,6 +57,7 @@ export const VisualEditor = ({
   const [showSaveAsDialog, setShowSaveAsDialog] = useState(false);
   const [htmlContent, setHtmlContent] = useState(initialHtml || '');
   const [debouncedHtml, setDebouncedHtml] = useState(initialHtml || '');
+  const [isEditingHtml, setIsEditingHtml] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Use custom hook for element operations
@@ -107,18 +108,36 @@ export const VisualEditor = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Regenerate HTML when template elements change
+  // Regenerate HTML when template elements change (only if not manually editing HTML)
   useEffect(() => {
-    if (template.elements.length > 0 || template.canvasSize) {
+    if (!isEditingHtml && (template.elements.length > 0 || template.canvasSize)) {
       const generatedHtml = HTMLGenerator.generateHTML(template);
       setHtmlContent(generatedHtml);
     }
-  }, [template]);
+  }, [template, isEditingHtml]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedHtml(htmlContent), 250);
+    const t = setTimeout(() => setDebouncedHtml(htmlContent), 500);
     return () => clearTimeout(t);
   }, [htmlContent]);
+
+  // Parse HTML and update template when user edits HTML directly
+  useEffect(() => {
+    if (isEditingHtml && debouncedHtml.trim()) {
+      try {
+        const elements = HTMLParser.parseHTML(debouncedHtml);
+        if (elements.length > 0) {
+          setTemplate((prev) => ({
+            ...prev,
+            elements,
+          }));
+        }
+      } catch (error) {
+        console.error("Error parsing HTML:", error);
+        // Don't show error toast on every keystroke, just log it
+      }
+    }
+  }, [debouncedHtml, isEditingHtml]);
 
   // Detect changes
   useEffect(() => {
@@ -395,7 +414,14 @@ export const VisualEditor = ({
             <div className="flex-1 overflow-hidden p-4">
               <Textarea
                 value={htmlContent}
-                onChange={(e) => setHtmlContent(e.target.value)}
+                onChange={(e) => {
+                  setHtmlContent(e.target.value);
+                  setIsEditingHtml(true);
+                }}
+                onBlur={() => {
+                  // Small delay before stopping edit mode to allow parsing to complete
+                  setTimeout(() => setIsEditingHtml(false), 1000);
+                }}
                 className="w-full h-full font-mono text-sm resize-none"
                 placeholder="Paste your HTML code here or design visually..."
               />
